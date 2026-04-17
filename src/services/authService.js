@@ -70,14 +70,14 @@ export const logout = async () => {
 
 export const getCurrentUser = () => auth.currentUser
 
-export const subscribeToAuthChanges = (callback) => onAuthStateChanged(auth, callback)
+export const subscribeToAuth = (callback) => onAuthStateChanged(auth, callback)
 
 const authService = {
   register,
   login,
   logout,
   getCurrentUser,
-  subscribeToAuthChanges,
+  subscribeToAuth,
 }
 
 export default authService
