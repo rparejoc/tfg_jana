@@ -1,7 +1,7 @@
 <script setup>
-import AuthTestPage from './pages/AuthTestPage.vue'
+import AuthPage from './pages/AuthPage.vue'
 </script>
 
 <template>
-  <AuthTestPage />
+  <AuthPage />
 </template>
