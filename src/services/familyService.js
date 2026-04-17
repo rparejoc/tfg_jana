@@ -45,6 +45,7 @@ const addFamilyIdToUser = async (user, familyId) => {
   try {
     await updateDoc(userRef, {
       familyIds: arrayUnion(familyId),
+      activeFamilyId: familyId,
     })
   } catch (error) {
     if (error?.code !== 'not-found') {
