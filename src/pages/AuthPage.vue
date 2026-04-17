@@ -18,9 +18,22 @@ const submitLabel = computed(() => (submitLoading.value
   ? (isLoginMode.value ? 'Logging in...' : 'Creating account...')
   : (isLoginMode.value ? 'Login' : 'Register')))
 
+const hasRedirected = ref(false)
+
 const redirectToPostAuth = () => {
+  if (hasRedirected.value) {
+    return
+  }
+
   const targetPath = '/dashboard'
-  window.location.assign(targetPath)
+
+  if (window.location.pathname === targetPath) {
+    hasRedirected.value = true
+    return
+  }
+
+  hasRedirected.value = true
+  window.location.replace(targetPath)
 }
 
 const toggleMode = () => {
@@ -92,7 +105,7 @@ watch(
           :disabled="submitLoading || authLoading"
         />
 
-        <p v-if="authLoading" class="status">Checking session...</p>
+        <p v-if="authLoading && !submitLoading" class="status">Checking session...</p>
         <p v-if="errorMessage" class="error">{{ errorMessage }}</p>
 
         <button type="submit" :disabled="submitLoading || authLoading">
