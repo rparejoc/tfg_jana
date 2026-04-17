@@ -1,4 +1,4 @@
-import { doc, getDoc, serverTimestamp, setDoc } from 'firebase/firestore'
+import { doc, getDoc, serverTimestamp, setDoc, updateDoc } from 'firebase/firestore'
 import { db } from '../firebase'
 
 const toUserServiceError = (error, fallbackMessage) => ({
@@ -72,9 +72,33 @@ export const getUserProfile = async (userId) => {
   }
 }
 
+
+export const setActiveFamilyId = async (userId, familyId) => {
+  if (!userId || !familyId) {
+    return {
+      error: toUserServiceError(null, 'A valid userId and familyId are required.'),
+    }
+  }
+
+  try {
+    const userRef = doc(db, 'users', userId)
+
+    await updateDoc(userRef, {
+      activeFamilyId: familyId,
+    })
+
+    return { error: null }
+  } catch (error) {
+    return {
+      error: toUserServiceError(error, 'Unable to set active family right now.'),
+    }
+  }
+}
+
 const userService = {
   createUserProfile,
   getUserProfile,
+  setActiveFamilyId,
 }
 
 export default userService
