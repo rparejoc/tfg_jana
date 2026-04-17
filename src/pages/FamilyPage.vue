@@ -1,5 +1,5 @@
 <script setup>
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { storeToRefs } from 'pinia'
 import familyService from '../services/familyService'
 import userService from '../services/userService'
@@ -159,6 +159,15 @@ const handleSwitchActiveFamily = async (familyId) => {
 onMounted(() => {
   loadUserData()
 })
+
+watch(
+  user,
+  (currentUser) => {
+    if (currentUser?.uid) {
+      loadUserData()
+    }
+  },
+)
 </script>
 
 <template>
@@ -178,9 +187,9 @@ onMounted(() => {
           type="text"
           placeholder="My family"
           required
-          :disabled="createLoading || joinLoading"
+          :disabled="createLoading || joinLoading || !user?.uid"
         />
-        <button type="submit" :disabled="createLoading || joinLoading">
+        <button type="submit" :disabled="createLoading || joinLoading || !user?.uid">
           {{ createLoading ? 'Creating...' : 'Create family' }}
         </button>
       </form>
@@ -194,9 +203,9 @@ onMounted(() => {
           type="text"
           placeholder="ABC123"
           required
-          :disabled="createLoading || joinLoading"
+          :disabled="createLoading || joinLoading || !user?.uid"
         />
-        <button type="submit" :disabled="createLoading || joinLoading">
+        <button type="submit" :disabled="createLoading || joinLoading || !user?.uid">
           {{ joinLoading ? 'Joining...' : 'Join family' }}
         </button>
       </form>
@@ -233,9 +242,9 @@ onMounted(() => {
           type="text"
           placeholder="Another family"
           required
-          :disabled="createLoading || joinLoading"
+          :disabled="createLoading || joinLoading || !user?.uid"
         />
-        <button type="submit" :disabled="createLoading || joinLoading">
+        <button type="submit" :disabled="createLoading || joinLoading || !user?.uid">
           {{ createLoading ? 'Creating...' : 'Create family' }}
         </button>
       </form>
@@ -249,9 +258,9 @@ onMounted(() => {
           type="text"
           placeholder="ABC123"
           required
-          :disabled="createLoading || joinLoading"
+          :disabled="createLoading || joinLoading || !user?.uid"
         />
-        <button type="submit" :disabled="createLoading || joinLoading">
+        <button type="submit" :disabled="createLoading || joinLoading || !user?.uid">
           {{ joinLoading ? 'Joining...' : 'Join family' }}
         </button>
       </form>
