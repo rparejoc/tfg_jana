@@ -1,4 +1,4 @@
-# TFG Jana - Vue
+# Family Trip
 
 Proyecto base en **Vue 3 + Vite**.
 
