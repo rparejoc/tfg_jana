@@ -235,96 +235,65 @@ const handleSubmit = async () => {
 </script>
 
 <template>
-  <main>
-    <h1>Create Trip</h1>
+  <main class="mx-auto max-w-3xl rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
+    <h1 class="text-2xl font-bold tracking-tight text-slate-900">Create Trip</h1>
 
-    <p v-if="error">{{ error }}</p>
-    <p v-if="uploadLoading">Uploading photos...</p>
+    <p v-if="error" class="mt-4 rounded-lg border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700">{{ error }}</p>
+    <p v-if="uploadLoading" class="mt-3 text-sm text-slate-600">Uploading photos...</p>
 
-    <form @submit.prevent="handleSubmit">
-      <label for="trip-title">Title</label>
-      <input
-        id="trip-title"
-        v-model="form.title"
-        type="text"
-        placeholder="Summer Vacation"
-        required
-        :disabled="loading"
-      />
+    <form class="mt-6 space-y-5" @submit.prevent="handleSubmit">
+      <div class="grid gap-5 sm:grid-cols-2">
+        <div class="space-y-1.5 sm:col-span-2">
+          <label for="trip-title" class="text-sm font-medium text-slate-700">Title</label>
+          <input id="trip-title" v-model="form.title" type="text" placeholder="Summer Vacation" required :disabled="loading" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none ring-brand-100 focus:border-brand-600 focus:ring-4"/>
+        </div>
 
-      <label for="trip-description">Description</label>
-      <textarea
-        id="trip-description"
-        v-model="form.description"
-        placeholder="A simple family trip."
-        :disabled="loading"
-      />
+        <div class="space-y-1.5 sm:col-span-2">
+          <label for="trip-description" class="text-sm font-medium text-slate-700">Description</label>
+          <textarea id="trip-description" v-model="form.description" placeholder="A simple family trip." :disabled="loading" class="min-h-24 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none ring-brand-100 focus:border-brand-600 focus:ring-4"></textarea>
+        </div>
 
-      <label for="trip-start-date">Start date</label>
-      <input
-        id="trip-start-date"
-        v-model="form.startDate"
-        type="date"
-        required
-        :disabled="loading"
-      />
+        <div class="space-y-1.5">
+          <label for="trip-start-date" class="text-sm font-medium text-slate-700">Start date</label>
+          <input id="trip-start-date" v-model="form.startDate" type="date" required :disabled="loading" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none ring-brand-100 focus:border-brand-600 focus:ring-4"/>
+        </div>
 
-      <label for="trip-end-date">End date</label>
-      <input
-        id="trip-end-date"
-        v-model="form.endDate"
-        type="date"
-        required
-        :disabled="loading"
-      />
+        <div class="space-y-1.5">
+          <label for="trip-end-date" class="text-sm font-medium text-slate-700">End date</label>
+          <input id="trip-end-date" v-model="form.endDate" type="date" required :disabled="loading" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none ring-brand-100 focus:border-brand-600 focus:ring-4"/>
+        </div>
+      </div>
 
-      <label for="trip-location-search">Search location</label>
-      <input
-        id="trip-location-search"
-        v-model="locationQuery"
-        type="text"
-        placeholder="Search city or place"
-        :disabled="loading || locationLoading"
-      />
-      <button
-        type="button"
-        @click="handleLocationSearch"
-        :disabled="loading || locationLoading"
-      >
-        {{ locationLoading ? 'Searching...' : 'Add location' }}
-      </button>
+      <div class="space-y-2 rounded-xl border border-slate-200 bg-slate-50 p-4">
+        <label for="trip-location-search" class="text-sm font-medium text-slate-700">Search location</label>
+        <div class="flex flex-col gap-2 sm:flex-row">
+          <input id="trip-location-search" v-model="locationQuery" type="text" placeholder="Search city or place" :disabled="loading || locationLoading" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none ring-brand-100 focus:border-brand-600 focus:ring-4"/>
+          <button type="button" @click="handleLocationSearch" :disabled="loading || locationLoading" class="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-700 disabled:opacity-60">{{ locationLoading ? 'Searching...' : 'Add location' }}</button>
+        </div>
 
-      <p v-if="locationError">{{ locationError }}</p>
+        <p v-if="locationError" class="text-sm text-rose-600">{{ locationError }}</p>
 
-      <ul v-if="locationResults.length">
-        <li
-          v-for="(result, index) in locationResults"
-          :key="`${result.name}-${result.lat}-${result.lng}-${index}`"
-        >
-          {{ result.name }} ({{ result.country }})
-          <button type="button" @click="addLocation(result)" :disabled="loading">
-            Select
-          </button>
-        </li>
-      </ul>
+        <ul v-if="locationResults.length" class="space-y-2">
+          <li v-for="(result, index) in locationResults" :key="`${result.name}-${result.lat}-${result.lng}-${index}`" class="flex items-center justify-between rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm">
+            <span>{{ result.name }} ({{ result.country }})</span>
+            <button type="button" @click="addLocation(result)" :disabled="loading" class="rounded-md border border-slate-300 px-2.5 py-1 text-xs font-medium transition hover:bg-slate-100">Select</button>
+          </li>
+        </ul>
+      </div>
 
-      <h2>Added locations</h2>
-      <ul v-if="locations.length">
-        <li
-          v-for="(location, index) in locations"
-          :key="`${location.name}-${location.lat}-${location.lng}-${index}`"
-        >
-          {{ location.name }} ({{ location.country }}) - {{ location.lat }}, {{ location.lng }}
-        </li>
-      </ul>
-      <p v-else>No locations added yet.</p>
-
+      <div>
+        <h2 class="text-base font-semibold text-slate-900">Added locations</h2>
+        <ul v-if="locations.length" class="mt-2 space-y-1.5 text-sm text-slate-600">
+          <li v-for="(location, index) in locations" :key="`${location.name}-${location.lat}-${location.lng}-${index}`">{{ location.name }} ({{ location.country }}) - {{ location.lat }}, {{ location.lng }}</li>
+        </ul>
+        <p v-else class="mt-2 text-sm text-slate-500">No locations added yet.</p>
+      </div>
 
       <TripMapSection v-if="locations.length" :locations="locations" />
 
       <PhotoUploader :disabled="loading || uploadLoading" @update:selected-files="handlePhotosSelected" />
 
-      <button type="submit" :disabled="loading || uploadLoading">
+      <button type="submit" :disabled="loading || uploadLoading" class="w-full rounded-lg bg-brand-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-brand-700 disabled:opacity-60">
         {{ loading || uploadLoading ? 'Creating...' : 'Create trip' }}
       </button>
     </form>

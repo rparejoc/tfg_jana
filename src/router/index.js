@@ -12,7 +12,7 @@ const routes = [
     path: '/',
     name: 'auth',
     component: AuthPage,
-    meta: { requiresGuest: true },
+    meta: { requiresGuest: true, layout: 'auth' },
   },
   {
     path: '/dashboard',
