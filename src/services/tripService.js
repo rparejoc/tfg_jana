@@ -1,6 +1,8 @@
 import {
   addDoc,
   collection,
+  doc,
+  getDoc,
   getDocs,
   query,
   serverTimestamp,
@@ -60,6 +62,52 @@ export const createTrip = async (tripData, user) => {
   }
 }
 
+
+
+export const getTripById = async (tripId) => {
+  if (!tripId) {
+    return {
+      trip: null,
+      photos: [],
+      error: toTripServiceError(null, 'A valid tripId is required.'),
+    }
+  }
+
+  try {
+    const tripRef = doc(db, 'trips', tripId)
+    const tripSnapshot = await getDoc(tripRef)
+
+    if (!tripSnapshot.exists()) {
+      return {
+        trip: null,
+        photos: [],
+        error: toTripServiceError(null, 'Trip not found.'),
+      }
+    }
+
+    const photosSnapshot = await getDocs(collection(db, 'trips', tripId, 'photos'))
+    const photos = photosSnapshot.docs.map((photoDoc) => ({
+      id: photoDoc.id,
+      ...photoDoc.data(),
+    }))
+
+    return {
+      trip: {
+        id: tripSnapshot.id,
+        ...tripSnapshot.data(),
+      },
+      photos,
+      error: null,
+    }
+  } catch (error) {
+    return {
+      trip: null,
+      photos: [],
+      error: toTripServiceError(error, 'Unable to fetch trip details right now.'),
+    }
+  }
+}
+
 export const getTripsByFamily = async (familyId) => {
   if (!familyId) {
     return {
@@ -89,6 +137,7 @@ export const getTripsByFamily = async (familyId) => {
 
 const tripService = {
   createTrip,
+  getTripById,
   getTripsByFamily,
 }
 
