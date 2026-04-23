@@ -3,6 +3,7 @@ import AuthPage from '../pages/AuthPage.vue'
 import FamilyPage from '../pages/FamilyPage.vue'
 import CreateTripPage from '../pages/CreateTripPage.vue'
 import TripDetailPage from '../pages/TripDetailPage.vue'
+import TripFeedPage from '../pages/TripFeedPage.vue'
 import { useAuthStore } from '../stores/authStore'
 
 const routes = [
@@ -15,6 +16,12 @@ const routes = [
   {
     path: '/dashboard',
     name: 'dashboard',
+    component: TripFeedPage,
+    meta: { requiresAuth: true },
+  },
+  {
+    path: '/families',
+    name: 'families',
     component: FamilyPage,
     meta: { requiresAuth: true },
   },
