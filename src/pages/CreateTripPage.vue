@@ -1,12 +1,16 @@
 <script setup>
 import { reactive, ref } from 'vue'
+import { collection, doc, serverTimestamp, setDoc, updateDoc } from 'firebase/firestore'
 import { useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import tripService from '../services/tripService'
 import userService from '../services/userService'
 import geocodingService from '../services/geocodingService'
 import { useAuthStore } from '../stores/authStore'
+import { db } from '../firebase'
 import TripMapSection from '../components/TripMapSection.vue'
+import PhotoUploader from '../components/PhotoUploader.vue'
+import photoService from '../services/photoService'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -26,7 +30,9 @@ const locationLoading = ref(false)
 const locationError = ref('')
 
 const loading = ref(false)
+const uploadLoading = ref(false)
 const error = ref('')
+const photoFiles = ref([])
 
 const handleLocationSearch = async () => {
   if (!locationQuery.value.trim()) {
@@ -80,6 +86,14 @@ const addLocation = (location) => {
   locationError.value = ''
 }
 
+
+const handlePhotosSelected = (selectedFiles) => {
+  photoFiles.value = selectedFiles
+}
+
+const getPhotoIdFromStoragePath = (storagePath) =>
+  storagePath?.split('/').pop()?.replace('.jpg', '') || null
+
 const handleSubmit = async () => {
   if (!user.value?.uid) {
     error.value = 'You must be signed in to create a trip.'
@@ -112,7 +126,7 @@ const handleSubmit = async () => {
     activeFamilyId: profile.activeFamilyId,
   }
 
-  const { error: createError } = await tripService.createTrip(
+  const { tripId, error: createError } = await tripService.createTrip(
     {
       ...form,
       locations: locations.value,
@@ -120,10 +134,67 @@ const handleSubmit = async () => {
     currentUserContext.value || fallbackContext,
   )
 
-  if (createError) {
-    error.value = createError.message
+  if (createError || !tripId) {
+    error.value = createError?.message || 'Unable to create trip right now.'
     loading.value = false
     return
+  }
+
+  if (photoFiles.value.length) {
+    uploadLoading.value = true
+
+    try {
+      let uploadedCount = 0
+      const uploadErrors = []
+
+      for (const file of photoFiles.value) {
+        const { url, storagePath, error: uploadError } = await photoService.uploadPhoto(
+          file,
+          user.value,
+          tripId,
+          profile.activeFamilyId,
+        )
+
+        if (uploadError || !url || !storagePath) {
+          uploadErrors.push(file.name)
+          continue
+        }
+
+        const photoId = getPhotoIdFromStoragePath(storagePath)
+
+        if (!photoId) {
+          uploadErrors.push(file.name)
+          continue
+        }
+
+        await setDoc(doc(collection(db, 'trips', tripId, 'photos'), photoId), {
+          url,
+          storagePath,
+          uploadedBy: user.value.uid,
+          uploadedAt: serverTimestamp(),
+        })
+
+        uploadedCount += 1
+      }
+
+      await updateDoc(doc(db, 'trips', tripId), {
+        photoCount: uploadedCount,
+        updatedAt: serverTimestamp(),
+      })
+
+      if (uploadErrors.length) {
+        error.value = `Trip created, but ${uploadErrors.length} photo(s) failed to upload.`
+        loading.value = false
+        return
+      }
+    } catch (uploadProcessError) {
+      error.value = uploadProcessError?.message || 'Trip created, but photo processing failed.'
+      loading.value = false
+      uploadLoading.value = false
+      return
+    }
+
+    uploadLoading.value = false
   }
 
   await router.push('/dashboard')
@@ -135,6 +206,7 @@ const handleSubmit = async () => {
     <h1>Create Trip</h1>
 
     <p v-if="error">{{ error }}</p>
+    <p v-if="uploadLoading">Uploading photos...</p>
 
     <form @submit.prevent="handleSubmit">
       <label for="trip-title">Title</label>
@@ -217,8 +289,10 @@ const handleSubmit = async () => {
 
       <TripMapSection v-if="locations.length" :locations="locations" />
 
-      <button type="submit" :disabled="loading">
-        {{ loading ? 'Creating...' : 'Create trip' }}
+      <PhotoUploader :disabled="loading || uploadLoading" @update:selected-files="handlePhotosSelected" />
+
+      <button type="submit" :disabled="loading || uploadLoading">
+        {{ loading || uploadLoading ? 'Creating...' : 'Create trip' }}
       </button>
     </form>
   </main>
