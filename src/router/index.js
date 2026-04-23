@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import AuthPage from '../pages/AuthPage.vue'
 import FamilyPage from '../pages/FamilyPage.vue'
+import CreateTripPage from '../pages/CreateTripPage.vue'
 import { useAuthStore } from '../stores/authStore'
 
 const routes = [
@@ -14,6 +15,13 @@ const routes = [
     path: '/dashboard',
     name: 'dashboard',
     component: FamilyPage,
+    meta: { requiresAuth: true },
+  },
+
+  {
+    path: '/trips/create',
+    name: 'create-trip',
+    component: CreateTripPage,
     meta: { requiresAuth: true },
   },
 ]
