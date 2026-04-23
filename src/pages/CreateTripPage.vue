@@ -6,6 +6,7 @@ import tripService from '../services/tripService'
 import userService from '../services/userService'
 import geocodingService from '../services/geocodingService'
 import { useAuthStore } from '../stores/authStore'
+import TripMapSection from '../components/TripMapSection.vue'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -212,6 +213,9 @@ const handleSubmit = async () => {
         </li>
       </ul>
       <p v-else>No locations added yet.</p>
+
+
+      <TripMapSection v-if="locations.length" :locations="locations" />
 
       <button type="submit" :disabled="loading">
         {{ loading ? 'Creating...' : 'Create trip' }}
