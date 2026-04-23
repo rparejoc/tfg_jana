@@ -173,6 +173,9 @@ watch(
 <template>
   <main>
     <h1>Family Management</h1>
+    <p>
+      <router-link to="/trips/create">Create a trip</router-link>
+    </p>
 
     <p v-if="loading">Loading...</p>
     <p v-if="error">{{ error }}</p>
