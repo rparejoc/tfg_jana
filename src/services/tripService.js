@@ -1,14 +1,18 @@
 import {
   addDoc,
   collection,
+  deleteDoc,
   doc,
   getDoc,
   getDocs,
   query,
   serverTimestamp,
+  updateDoc,
   where,
+  writeBatch,
 } from 'firebase/firestore'
-import { db } from '../firebase'
+import { deleteObject, listAll, ref as storageRef } from 'firebase/storage'
+import { db, storage } from '../firebase'
 
 const toTripServiceError = (error, fallbackMessage) => ({
   code: error?.code || 'firestore/unknown',
@@ -62,7 +66,91 @@ export const createTrip = async (tripData, user) => {
   }
 }
 
+export const updateTrip = async (tripId, updatedData) => {
+  if (!tripId) {
+    return {
+      success: false,
+      error: toTripServiceError(null, 'A valid tripId is required.'),
+    }
+  }
 
+  try {
+    const updates = {
+      updatedAt: serverTimestamp(),
+    }
+
+    if (typeof updatedData?.title === 'string') {
+      updates.title = updatedData.title.trim()
+    }
+
+    if (typeof updatedData?.description === 'string') {
+      updates.description = updatedData.description.trim()
+    }
+
+    if ('startDate' in (updatedData || {})) {
+      updates.startDate = updatedData.startDate || null
+    }
+
+    if ('endDate' in (updatedData || {})) {
+      updates.endDate = updatedData.endDate || null
+    }
+
+    if (Array.isArray(updatedData?.locations)) {
+      updates.locations = updatedData.locations
+    }
+
+    await updateDoc(doc(db, 'trips', tripId), updates)
+
+    return { success: true, error: null }
+  } catch (error) {
+    return {
+      success: false,
+      error: toTripServiceError(error, 'Unable to update trip right now.'),
+    }
+  }
+}
+
+export const deleteTrip = async (tripId, familyId) => {
+  if (!tripId) {
+    return {
+      success: false,
+      error: toTripServiceError(null, 'A valid tripId is required.'),
+    }
+  }
+
+  try {
+    const photosRef = collection(db, 'trips', tripId, 'photos')
+    const photosSnapshot = await getDocs(photosRef)
+
+    if (!photosSnapshot.empty) {
+      const batch = writeBatch(db)
+      photosSnapshot.docs.forEach((photoDoc) => {
+        batch.delete(photoDoc.ref)
+      })
+      await batch.commit()
+    }
+
+    if (familyId) {
+      const tripStorageFolder = storageRef(storage, `families/${familyId}/trips/${tripId}`)
+      const listedItems = await listAll(tripStorageFolder)
+
+      if (listedItems.items.length) {
+        await Promise.all(
+          listedItems.items.map((storageItem) => deleteObject(storageItem).catch(() => null)),
+        )
+      }
+    }
+
+    await deleteDoc(doc(db, 'trips', tripId))
+
+    return { success: true, error: null }
+  } catch (error) {
+    return {
+      success: false,
+      error: toTripServiceError(error, 'Unable to delete trip right now.'),
+    }
+  }
+}
 
 export const getTripById = async (tripId) => {
   if (!tripId) {
@@ -137,6 +225,8 @@ export const getTripsByFamily = async (familyId) => {
 
 const tripService = {
   createTrip,
+  updateTrip,
+  deleteTrip,
   getTripById,
   getTripsByFamily,
 }

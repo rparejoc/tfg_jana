@@ -4,6 +4,7 @@ import FamilyPage from '../pages/FamilyPage.vue'
 import CreateTripPage from '../pages/CreateTripPage.vue'
 import TripDetailPage from '../pages/TripDetailPage.vue'
 import TripFeedPage from '../pages/TripFeedPage.vue'
+import EditTripPage from '../pages/EditTripPage.vue'
 import { useAuthStore } from '../stores/authStore'
 
 const routes = [
@@ -36,6 +37,12 @@ const routes = [
     path: '/trip/:tripId',
     name: 'trip-detail',
     component: TripDetailPage,
+    meta: { requiresAuth: true },
+  },
+  {
+    path: '/trip/:tripId/edit',
+    name: 'edit-trip',
+    component: EditTripPage,
     meta: { requiresAuth: true },
   },
 ]
