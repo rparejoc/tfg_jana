@@ -1,5 +1,6 @@
 <script setup>
 import { computed, ref, watch } from 'vue'
+import { useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import authService from '../services/authService'
 import { useAuthStore } from '../stores/authStore'
@@ -18,6 +19,7 @@ const submitLabel = computed(() => (submitLoading.value
   ? (isLoginMode.value ? 'Logging in...' : 'Creating account...')
   : (isLoginMode.value ? 'Login' : 'Register')))
 
+const router = useRouter()
 const hasRedirected = ref(false)
 
 const redirectToPostAuth = () => {
@@ -25,15 +27,8 @@ const redirectToPostAuth = () => {
     return
   }
 
-  const targetPath = '/dashboard'
-
-  if (window.location.pathname === targetPath) {
-    hasRedirected.value = true
-    return
-  }
-
   hasRedirected.value = true
-  window.location.replace(targetPath)
+  router.replace('/dashboard')
 }
 
 const toggleMode = () => {
