@@ -135,90 +135,66 @@ onMounted(() => {
 </script>
 
 <template>
-  <main>
-    <h1>Trip Detail</h1>
+  <main class="space-y-6">
+    <p v-if="loading" class="rounded-xl border border-slate-200 bg-white p-4 text-sm text-slate-600">Loading trip details...</p>
+    <p v-else-if="error" class="rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">{{ error }}</p>
 
-    <p v-if="loading">Loading trip details...</p>
-    <p v-else-if="error">{{ error }}</p>
+    <section v-else class="space-y-6">
+      <section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+        <div class="flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <h1 class="text-2xl font-bold tracking-tight text-slate-900">{{ trip.title || 'Untitled trip' }}</h1>
+            <p class="mt-2 text-sm text-slate-600">{{ trip.description || 'No description provided.' }}</p>
+            <p class="mt-2 text-sm font-medium text-slate-700">Dates: {{ tripDates }}</p>
+          </div>
 
-    <section v-else>
-      <h2>{{ trip.title || 'Untitled trip' }}</h2>
-      <p>{{ trip.description || 'No description provided.' }}</p>
-      <p><strong>Dates:</strong> {{ tripDates }}</p>
+          <div v-if="canManageTrip" class="flex gap-2">
+            <router-link :to="`/trip/${trip.id}/edit`" class="rounded-lg border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-100">Edit trip</router-link>
+            <button type="button" @click="handleDeleteTrip" class="rounded-lg bg-rose-600 px-3 py-2 text-sm font-semibold text-white transition hover:bg-rose-700">Delete trip</button>
+          </div>
+        </div>
 
-      <div v-if="canManageTrip" class="trip-actions">
-        <router-link :to="`/trip/${trip.id}/edit`">Edit trip</router-link>
-        <button type="button" @click="handleDeleteTrip">Delete trip</button>
-      </div>
+        <div class="mt-5">
+          <h2 class="text-base font-semibold text-slate-900">Participants</h2>
+          <ul v-if="participantNames.length" class="mt-2 flex flex-wrap gap-2">
+            <li v-for="participantName in participantNames" :key="participantName" class="rounded-full bg-slate-100 px-3 py-1 text-sm text-slate-700">{{ participantName }}</li>
+          </ul>
+          <p v-else class="mt-2 text-sm text-slate-500">No participants available.</p>
+        </div>
+      </section>
 
-      <section>
-        <h3>Participants</h3>
-        <ul v-if="participantNames.length">
-          <li v-for="participantName in participantNames" :key="participantName">
-            {{ participantName }}
+      <section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+        <h3 class="text-lg font-semibold text-slate-900">Map</h3>
+        <div class="mt-4">
+          <TripMapSection :locations="tripLocations" />
+        </div>
+      </section>
+
+      <section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+        <h3 class="text-lg font-semibold text-slate-900">Weather</h3>
+        <ul v-if="weatherItems.length" class="mt-4 grid gap-2 sm:grid-cols-2">
+          <li v-for="(weatherItem, index) in weatherItems" :key="`${weatherItem.locationName || 'location'}-${index}`" class="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700">
+            <strong class="text-slate-900">{{ weatherItem.locationName || 'Unknown location' }}</strong>
+            <span class="ml-1">{{ weatherItem.temperatureAvg ?? 'N/A' }}°C · {{ weatherItem.condition || 'Unknown' }}</span>
           </li>
         </ul>
-        <p v-else>No participants available.</p>
+        <p v-else class="mt-2 text-sm text-slate-500">No weather data available.</p>
       </section>
 
-      <section>
-        <h3>Map</h3>
-        <TripMapSection :locations="tripLocations" />
-      </section>
-
-      <section>
-        <h3>Weather</h3>
-        <ul v-if="weatherItems.length">
-          <li
-            v-for="(weatherItem, index) in weatherItems"
-            :key="`${weatherItem.locationName || 'location'}-${index}`"
-          >
-            <strong>{{ weatherItem.locationName || 'Unknown location' }}</strong>
-            <span>
-              -
-              {{ weatherItem.temperatureAvg ?? 'N/A' }}°C
-              · {{ weatherItem.condition || 'Unknown' }}
-            </span>
-          </li>
-        </ul>
-        <p v-else>No weather data available.</p>
-      </section>
-
-      <section>
-        <h3>Photo Gallery</h3>
-        <div v-if="photos.length" class="photo-grid">
+      <section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+        <h3 class="text-lg font-semibold text-slate-900">Photo Gallery</h3>
+        <div v-if="photos.length" class="mt-4 grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-4">
           <img
             v-for="photo in photos"
             :key="photo.id"
             :src="photo.url"
             alt="Trip photo"
-            class="photo-grid__image"
+            class="h-40 w-full rounded-xl object-cover"
             loading="lazy"
           />
         </div>
-        <p v-else>No photos uploaded for this trip.</p>
+        <p v-else class="mt-2 text-sm text-slate-500">No photos uploaded for this trip.</p>
       </section>
     </section>
   </main>
 </template>
-
-<style scoped>
-.trip-actions {
-  display: flex;
-  gap: 12px;
-  margin-bottom: 16px;
-}
-
-.photo-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-  gap: 12px;
-}
-
-.photo-grid__image {
-  width: 100%;
-  height: 160px;
-  object-fit: cover;
-  border-radius: 8px;
-}
-</style>

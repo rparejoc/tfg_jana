@@ -69,48 +69,58 @@ watch(
 </script>
 
 <template>
-  <main class="auth-page">
-    <section class="auth-card">
-      <h1>{{ modeTitle }}</h1>
-      <p class="subtitle">
+  <main class="grid min-h-[calc(100vh-64px)] place-items-center px-4 py-8">
+    <section class="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-6 shadow-xl sm:p-8">
+      <h1 class="text-2xl font-bold tracking-tight text-slate-900">{{ modeTitle }}</h1>
+      <p class="mt-2 text-sm text-slate-500">
         {{ isLoginMode ? 'Sign in to continue.' : 'Create an account to get started.' }}
       </p>
 
-      <form class="auth-form" @submit.prevent="handleSubmit">
-        <label for="email">Email</label>
-        <input
-          id="email"
-          v-model="email"
-          type="email"
-          autocomplete="email"
-          placeholder="you@example.com"
-          required
+      <form class="mt-6 space-y-4" @submit.prevent="handleSubmit">
+        <div class="space-y-1.5">
+          <label for="email" class="text-sm font-medium text-slate-700">Email</label>
+          <input
+            id="email"
+            v-model="email"
+            type="email"
+            autocomplete="email"
+            placeholder="you@example.com"
+            required
+            :disabled="submitLoading || authLoading"
+            class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm shadow-sm outline-none ring-brand-100 transition focus:border-brand-600 focus:ring-4"
+          />
+        </div>
+
+        <div class="space-y-1.5">
+          <label for="password" class="text-sm font-medium text-slate-700">Password</label>
+          <input
+            id="password"
+            v-model="password"
+            type="password"
+            autocomplete="current-password"
+            placeholder="••••••••"
+            required
+            minlength="6"
+            :disabled="submitLoading || authLoading"
+            class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm shadow-sm outline-none ring-brand-100 transition focus:border-brand-600 focus:ring-4"
+          />
+        </div>
+
+        <p v-if="authLoading && !submitLoading" class="text-sm text-emerald-700">Checking session...</p>
+        <p v-if="errorMessage" class="text-sm text-rose-600">{{ errorMessage }}</p>
+
+        <button
+          type="submit"
           :disabled="submitLoading || authLoading"
-        />
-
-        <label for="password">Password</label>
-        <input
-          id="password"
-          v-model="password"
-          type="password"
-          autocomplete="current-password"
-          placeholder="••••••••"
-          required
-          minlength="6"
-          :disabled="submitLoading || authLoading"
-        />
-
-        <p v-if="authLoading && !submitLoading" class="status">Checking session...</p>
-        <p v-if="errorMessage" class="error">{{ errorMessage }}</p>
-
-        <button type="submit" :disabled="submitLoading || authLoading">
+          class="w-full rounded-lg bg-brand-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-60"
+        >
           {{ submitLabel }}
         </button>
       </form>
 
       <button
         type="button"
-        class="toggle-btn"
+        class="mt-4 w-full rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
         :disabled="submitLoading || authLoading"
         @click="toggleMode"
       >
@@ -119,96 +129,3 @@ watch(
     </section>
   </main>
 </template>
-
-<style scoped>
-.auth-page {
-  min-height: 100vh;
-  display: grid;
-  place-items: center;
-  padding: 1.5rem;
-  background: #f4f6f8;
-}
-
-.auth-card {
-  width: min(100%, 400px);
-  background: #ffffff;
-  border: 1px solid #e5e7eb;
-  border-radius: 12px;
-  box-shadow: 0 12px 36px rgba(15, 23, 42, 0.08);
-  padding: 1.5rem;
-}
-
-h1 {
-  margin: 0;
-  font-size: 1.5rem;
-}
-
-.subtitle {
-  margin: 0.5rem 0 1.25rem;
-  color: #64748b;
-  font-size: 0.95rem;
-}
-
-.auth-form {
-  display: grid;
-  gap: 0.65rem;
-}
-
-label {
-  font-weight: 600;
-  color: #0f172a;
-}
-
-input {
-  border: 1px solid #cbd5e1;
-  border-radius: 8px;
-  padding: 0.65rem 0.75rem;
-  font: inherit;
-}
-
-input:focus {
-  outline: 2px solid #bfdbfe;
-  border-color: #3b82f6;
-}
-
-button {
-  border: none;
-  border-radius: 8px;
-  padding: 0.7rem 0.85rem;
-  font: inherit;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-button[type='submit'] {
-  margin-top: 0.25rem;
-  background: #2563eb;
-  color: #ffffff;
-}
-
-button:disabled {
-  opacity: 0.65;
-  cursor: not-allowed;
-}
-
-.toggle-btn {
-  margin-top: 0.75rem;
-  background: transparent;
-  color: #334155;
-  width: 100%;
-}
-
-.status,
-.error {
-  margin: 0.2rem 0;
-  font-size: 0.9rem;
-}
-
-.status {
-  color: #0f766e;
-}
-
-.error {
-  color: #b91c1c;
-}
-</style>

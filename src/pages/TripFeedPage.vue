@@ -86,71 +86,42 @@ watch(activeFamilyId, () => {
 </script>
 
 <template>
-  <main class="trip-feed-page">
-    <header class="trip-feed-header">
-      <h1>Trip Dashboard</h1>
-      <router-link to="/trips/create">Create Trip</router-link>
+  <main class="space-y-6">
+    <header class="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+      <div>
+        <h1 class="text-2xl font-bold tracking-tight text-slate-900">Trip Dashboard</h1>
+        <p class="mt-1 text-sm text-slate-500">All your family adventures in one place.</p>
+      </div>
+      <router-link
+        to="/trips/create"
+        class="inline-flex items-center justify-center rounded-lg bg-brand-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-brand-700"
+      >
+        Create Trip
+      </router-link>
     </header>
 
-    <p v-if="loading">Loading trips...</p>
-    <p v-else-if="error">{{ error }}</p>
-    <p v-else-if="!activeFamilyId">Choose an active family first to see trips.</p>
-    <p v-else-if="!trips.length">No trips yet</p>
+    <p v-if="loading" class="rounded-xl border border-slate-200 bg-white p-4 text-sm text-slate-600">Loading trips...</p>
+    <p v-else-if="error" class="rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">{{ error }}</p>
+    <p v-else-if="!activeFamilyId" class="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-700">Choose an active family first to see trips.</p>
+    <p v-else-if="!trips.length" class="rounded-xl border border-slate-200 bg-white p-4 text-sm text-slate-600">No trips yet.</p>
 
-    <section v-else class="trip-grid">
+    <section v-else class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
       <article
         v-for="trip in trips"
         :key="trip.id"
-        class="trip-card"
+        class="group cursor-pointer rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:border-brand-200 hover:shadow-md focus-within:border-brand-300"
         role="button"
         tabindex="0"
         @click="goToTrip(trip.id)"
         @keyup.enter="goToTrip(trip.id)"
       >
-        <h2>{{ trip.title || 'Untitled trip' }}</h2>
-        <p class="trip-dates">{{ formatDateRange(trip) }}</p>
-        <p>{{ getPhotoCount(trip) }} photos</p>
-        <p>{{ getLocationCount(trip) }} locations</p>
+        <h2 class="text-lg font-semibold text-slate-900 group-hover:text-brand-700">{{ trip.title || 'Untitled trip' }}</h2>
+        <p class="mt-1 text-sm text-slate-500">{{ formatDateRange(trip) }}</p>
+        <div class="mt-4 flex items-center gap-3 text-sm text-slate-600">
+          <span class="rounded-full bg-slate-100 px-2.5 py-1">📷 {{ getPhotoCount(trip) }} photos</span>
+          <span class="rounded-full bg-slate-100 px-2.5 py-1">📍 {{ getLocationCount(trip) }} locations</span>
+        </div>
       </article>
     </section>
   </main>
 </template>
-
-<style scoped>
-.trip-feed-page {
-  max-width: 960px;
-  margin: 0 auto;
-  padding: 24px 16px;
-}
-
-.trip-feed-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 20px;
-}
-
-.trip-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: 12px;
-}
-
-.trip-card {
-  border: 1px solid #ddd;
-  border-radius: 10px;
-  padding: 14px;
-  cursor: pointer;
-  transition: box-shadow 0.2s ease, border-color 0.2s ease;
-}
-
-.trip-card:hover,
-.trip-card:focus-visible {
-  border-color: #bbb;
-  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.08);
-}
-
-.trip-dates {
-  color: #555;
-}
-</style>
