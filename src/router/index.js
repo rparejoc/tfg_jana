@@ -2,6 +2,7 @@ import { createRouter, createWebHistory } from 'vue-router'
 import AuthPage from '../pages/AuthPage.vue'
 import FamilyPage from '../pages/FamilyPage.vue'
 import CreateTripPage from '../pages/CreateTripPage.vue'
+import TripDetailPage from '../pages/TripDetailPage.vue'
 import { useAuthStore } from '../stores/authStore'
 
 const routes = [
@@ -22,6 +23,12 @@ const routes = [
     path: '/trips/create',
     name: 'create-trip',
     component: CreateTripPage,
+    meta: { requiresAuth: true },
+  },
+  {
+    path: '/trip/:tripId',
+    name: 'trip-detail',
+    component: TripDetailPage,
     meta: { requiresAuth: true },
   },
 ]
