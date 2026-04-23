@@ -6,6 +6,7 @@ import { storeToRefs } from 'pinia'
 import tripService from '../services/tripService'
 import userService from '../services/userService'
 import geocodingService from '../services/geocodingService'
+import weatherService from '../services/weatherService'
 import { useAuthStore } from '../stores/authStore'
 import { db } from '../firebase'
 import TripMapSection from '../components/TripMapSection.vue'
@@ -94,6 +95,35 @@ const handlePhotosSelected = (selectedFiles) => {
 const getPhotoIdFromStoragePath = (storagePath) =>
   storagePath?.split('/').pop()?.replace('.jpg', '') || null
 
+
+const buildWeatherSnapshots = async () => {
+  const weatherDate = form.startDate || new Date().toISOString().slice(0, 10)
+  const weatherSnapshots = []
+  let hasFailures = false
+
+  for (const location of locations.value) {
+    const { weather, error: weatherError } = await weatherService.getWeather(
+      location.lat,
+      location.lng,
+      weatherDate,
+      location.name,
+    )
+
+    weatherSnapshots.push(weather)
+
+    if (weatherError) {
+      hasFailures = true
+    }
+  }
+
+  if (hasFailures) {
+    error.value =
+      'Trip will be created, but some weather data could not be loaded.'
+  }
+
+  return weatherSnapshots
+}
+
 const handleSubmit = async () => {
   if (!user.value?.uid) {
     error.value = 'You must be signed in to create a trip.'
@@ -126,10 +156,13 @@ const handleSubmit = async () => {
     activeFamilyId: profile.activeFamilyId,
   }
 
+  const weather = await buildWeatherSnapshots()
+
   const { tripId, error: createError } = await tripService.createTrip(
     {
       ...form,
       locations: locations.value,
+      weather,
     },
     currentUserContext.value || fallbackContext,
   )

@@ -47,7 +47,7 @@ export const createTrip = async (tripData, user) => {
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
       locations: Array.isArray(tripData?.locations) ? tripData.locations : [],
-      weather: [],
+      weather: Array.isArray(tripData?.weather) ? tripData.weather : [],
       photoCount: 0,
     })
 
