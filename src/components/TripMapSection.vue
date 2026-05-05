@@ -16,10 +16,10 @@ const mapElement = ref(null)
 
 const tripMarkerIcon = L.divIcon({
   className: 'trip-marker-icon',
-  html: '<span class="trip-marker-pin" aria-hidden="true"></span>',
-  iconSize: [30, 42],
-  iconAnchor: [15, 42],
-  popupAnchor: [0, -38],
+  html: '<span class="trip-marker-ring" aria-hidden="true"><span class="trip-marker-dot"></span></span>',
+  iconSize: [34, 34],
+  iconAnchor: [17, 17],
+  popupAnchor: [0, -18],
 })
 
 const isValidLocation = (location) =>
@@ -155,44 +155,56 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <section>
-    <h2>Map preview</h2>
-    <div ref="mapElement" class="trip-map" />
-  </section>
+  <div ref="mapElement" class="trip-map" />
 </template>
 
 <style scoped>
 .trip-map {
   height: 350px;
   width: 100%;
-  border-radius: 8px;
+  overflow: hidden;
+  border-radius: 22px;
+  background:
+    radial-gradient(circle at 20% 18%, rgb(37 99 235 / 10%), transparent 22rem),
+    linear-gradient(135deg, #eff6ff 0%, #ffffff 50%, #ecfdf5 100%);
 }
+
+.trip-map :deep(.leaflet-container) {
+  font-family: inherit;
+}
+
+.trip-map :deep(.leaflet-tile-pane) {
+  opacity: 0.32;
+  filter: saturate(0.75) contrast(0.96);
+}
+
+.trip-map :deep(.leaflet-control-attribution) {
+  border-top-left-radius: 10px;
+  font-size: 10px;
+}
+
 .trip-map :deep(.trip-marker-icon) {
   background: transparent;
   border: 0;
 }
 
-.trip-map :deep(.trip-marker-pin) {
-  position: relative;
-  display: block;
-  width: 30px;
-  height: 30px;
-  background: #dc2626;
-  border: 3px solid #ffffff;
-  border-radius: 50% 50% 50% 0;
-  box-shadow: 0 4px 10px rgb(0 0 0 / 30%);
-  transform: rotate(-45deg);
+.trip-map :deep(.trip-marker-ring) {
+  display: flex;
+  width: 34px;
+  height: 34px;
+  align-items: center;
+  justify-content: center;
+  border: 6px solid rgb(37 99 235 / 20%);
+  border-radius: 999px;
+  background: #ffffff;
+  box-shadow: 0 10px 22px rgb(37 99 235 / 26%);
 }
 
-.trip-map :deep(.trip-marker-pin::after) {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 10px;
-  height: 10px;
-  content: '';
-  background: #ffffff;
-  border-radius: 50%;
-  transform: translate(-50%, -50%);
+.trip-map :deep(.trip-marker-dot) {
+  display: block;
+  width: 12px;
+  height: 12px;
+  border-radius: 999px;
+  background: #2563eb;
 }
 </style>
