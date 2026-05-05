@@ -2,9 +2,6 @@
 import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
-import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png'
-import markerIcon from 'leaflet/dist/images/marker-icon.png'
-import markerShadow from 'leaflet/dist/images/marker-shadow.png'
 
 const props = defineProps({
   locations: {
@@ -17,10 +14,12 @@ let map = null
 let markersLayer = null
 const mapElement = ref(null)
 
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl: markerIcon2x,
-  iconUrl: markerIcon,
-  shadowUrl: markerShadow,
+const tripMarkerIcon = L.divIcon({
+  className: 'trip-marker-icon',
+  html: '<span class="trip-marker-pin" aria-hidden="true"></span>',
+  iconSize: [30, 42],
+  iconAnchor: [15, 42],
+  popupAnchor: [0, -38],
 })
 
 const setDefaultWorldView = () => {
@@ -50,7 +49,7 @@ const drawMarkers = () => {
       return
     }
 
-    L.marker([location.lat, location.lng])
+    L.marker([location.lat, location.lng], { icon: tripMarkerIcon })
       .addTo(markersLayer)
       .bindPopup(location.name || 'Selected location')
   })
@@ -109,5 +108,33 @@ onBeforeUnmount(() => {
   height: 350px;
   width: 100%;
   border-radius: 8px;
+}
+.trip-map :deep(.trip-marker-icon) {
+  background: transparent;
+  border: 0;
+}
+
+.trip-map :deep(.trip-marker-pin) {
+  position: relative;
+  display: block;
+  width: 30px;
+  height: 30px;
+  background: #dc2626;
+  border: 3px solid #ffffff;
+  border-radius: 50% 50% 50% 0;
+  box-shadow: 0 4px 10px rgb(0 0 0 / 30%);
+  transform: rotate(-45deg);
+}
+
+.trip-map :deep(.trip-marker-pin::after) {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 10px;
+  height: 10px;
+  content: '';
+  background: #ffffff;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
 }
 </style>
