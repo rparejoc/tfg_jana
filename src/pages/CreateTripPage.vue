@@ -498,25 +498,24 @@ watch(
               <p v-if="participantsLoading" class="mt-4 text-sm text-slate-500">Cargando participantes...</p>
               <p v-if="participantsError" class="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">{{ participantsError }}</p>
 
-              <div v-if="participantOptions.length" class="mt-5 grid gap-3">
+              <div v-if="participantOptions.length" class="mt-5 grid gap-3 sm:grid-cols-2">
                 <button
                   v-for="participant in participantOptions"
                   :key="participant.id"
                   type="button"
                   :disabled="loading || participant.id === user?.uid"
-                  class="group flex items-start gap-4 rounded-2xl border p-4 text-left transition hover:-translate-y-0.5 hover:shadow-md disabled:cursor-not-allowed sm:p-5"
-                  :class="participant.selected ? 'border-brand-600 bg-brand-50 shadow-brand-100 ring-2 ring-brand-100' : 'border-slate-200 bg-white'"
+                  class="flex items-center gap-3 rounded-2xl border p-4 text-left transition hover:-translate-y-0.5 hover:shadow-md disabled:cursor-not-allowed"
+                  :class="participant.selected ? 'border-brand-600 bg-brand-50 shadow-brand-100' : 'border-slate-200 bg-white'"
                   @click="toggleParticipant(participant.id)"
                 >
-                  <span class="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl text-base font-bold shadow-sm sm:h-14 sm:w-14" :class="participant.selected ? 'bg-brand-600 text-white' : 'bg-slate-100 text-slate-600'">
+                  <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-bold" :class="participant.selected ? 'bg-brand-600 text-white' : 'bg-slate-100 text-slate-500'">
                     {{ getParticipantName(participant).slice(0, 1).toUpperCase() }}
                   </span>
-                  <span class="min-w-0 flex-1 space-y-1">
-                    <span class="block break-words text-base font-bold leading-6 text-slate-950 sm:text-lg">{{ getParticipantName(participant) }}</span>
-                    <span v-if="participant.email && participant.email !== getParticipantName(participant)" class="block break-all text-sm text-slate-600">{{ participant.email }}</span>
-                    <span class="inline-flex rounded-full bg-white px-2.5 py-1 text-xs font-semibold capitalize text-slate-600 ring-1 ring-slate-200">{{ participant.id === user?.uid ? 'Creador incluido' : participant.role || 'member' }}</span>
+                  <span class="min-w-0 flex-1">
+                    <span class="block truncate text-sm font-semibold text-slate-900">{{ getParticipantName(participant) }}</span>
+                    <span class="text-xs capitalize text-slate-500">{{ participant.id === user?.uid ? 'Creador incluido' : participant.role || 'member' }}</span>
                   </span>
-                  <span class="shrink-0 rounded-full px-3 py-1.5 text-xs font-bold" :class="participant.selected ? 'bg-brand-600 text-white' : 'bg-slate-100 text-slate-600 group-hover:bg-slate-200'">
+                  <span class="rounded-full px-2 py-1 text-xs font-semibold" :class="participant.selected ? 'bg-brand-600 text-white' : 'bg-slate-100 text-slate-500'">
                     {{ participant.selected ? 'Incluido' : 'Añadir' }}
                   </span>
                 </button>
