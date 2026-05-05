@@ -48,8 +48,14 @@ export const createTrip = async (tripData, user) => {
       description: tripData?.description?.trim() || '',
       startDate: tripData?.startDate || null,
       endDate: tripData?.endDate || null,
-      participantIds: [authUser.uid],
-      participantNames: [authUser.displayName || authUser.email || 'Unknown User'],
+      participantIds:
+        Array.isArray(tripData?.participantIds) && tripData.participantIds.length
+          ? Array.from(new Set([authUser.uid, ...tripData.participantIds]))
+          : [authUser.uid],
+      participantNames:
+        Array.isArray(tripData?.participantNames) && tripData.participantNames.length
+          ? tripData.participantNames
+          : [authUser.displayName || authUser.email || 'Unknown User'],
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
       locations: Array.isArray(tripData?.locations) ? tripData.locations : [],
