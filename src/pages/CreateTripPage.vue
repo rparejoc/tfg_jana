@@ -498,13 +498,13 @@ watch(
               <p v-if="participantsLoading" class="mt-4 text-sm text-slate-500">Cargando participantes...</p>
               <p v-if="participantsError" class="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">{{ participantsError }}</p>
 
-              <div v-if="participantOptions.length" class="mt-5 grid gap-3 xl:grid-cols-2">
+              <div v-if="participantOptions.length" class="mt-5 grid gap-3 2xl:grid-cols-2">
                 <button
                   v-for="participant in participantOptions"
                   :key="participant.id"
                   type="button"
                   :disabled="loading || participant.id === user?.uid"
-                  class="grid grid-cols-[2.5rem_minmax(0,1fr)] items-start gap-3 rounded-2xl border p-4 text-left transition hover:-translate-y-0.5 hover:shadow-md disabled:cursor-not-allowed sm:grid-cols-[2.5rem_minmax(0,1fr)_auto]"
+                  class="grid w-full grid-cols-[2.5rem_minmax(0,1fr)] items-start gap-3 rounded-2xl border p-4 text-left transition hover:-translate-y-0.5 hover:shadow-md disabled:cursor-not-allowed"
                   :class="participant.selected ? 'border-brand-600 bg-brand-50 shadow-brand-100' : 'border-slate-200 bg-white'"
                   @click="toggleParticipant(participant.id)"
                 >
@@ -515,7 +515,7 @@ watch(
                     <span class="block break-words text-sm font-semibold leading-5 text-slate-900">{{ getParticipantName(participant) }}</span>
                     <span class="mt-1 block break-words text-xs capitalize leading-4 text-slate-500">{{ participant.id === user?.uid ? 'Creador incluido' : participant.role || 'member' }}</span>
                   </span>
-                  <span class="col-start-2 w-fit rounded-full px-2 py-1 text-xs font-semibold sm:col-start-auto" :class="participant.selected ? 'bg-brand-600 text-white' : 'bg-slate-100 text-slate-500'">
+                  <span class="col-start-2 w-fit rounded-full px-2 py-1 text-xs font-semibold" :class="participant.selected ? 'bg-brand-600 text-white' : 'bg-slate-100 text-slate-500'">
                     {{ participant.selected ? 'Incluido' : 'Añadir' }}
                   </span>
                 </button>
