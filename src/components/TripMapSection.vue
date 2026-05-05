@@ -22,6 +22,64 @@ const tripMarkerIcon = L.divIcon({
   popupAnchor: [0, -38],
 })
 
+const isValidLocation = (location) =>
+  Number.isFinite(location?.lat) && Number.isFinite(location?.lng)
+
+const getValidLocations = () => props.locations.filter(isValidLocation)
+
+const getCurvedRoutePoints = (start, end) => {
+  const latDifference = end.lat - start.lat
+  const lngDifference = end.lng - start.lng
+  const distance = Math.sqrt(latDifference ** 2 + lngDifference ** 2)
+  const curveStrength = Math.min(distance * 0.22, 8)
+  const perpendicularLat = distance ? (-lngDifference / distance) * curveStrength : 0
+  const perpendicularLng = distance ? (latDifference / distance) * curveStrength : 0
+
+  return Array.from({ length: 32 }, (_, index) => {
+    const progress = index / 31
+    const curveOffset = Math.sin(Math.PI * progress)
+
+    return [
+      start.lat + latDifference * progress + perpendicularLat * curveOffset,
+      start.lng + lngDifference * progress + perpendicularLng * curveOffset,
+    ]
+  })
+}
+
+const drawRoute = (validLocations) => {
+  if (validLocations.length < 2) {
+    return []
+  }
+
+  const routeBounds = []
+
+  for (let index = 0; index < validLocations.length - 1; index += 1) {
+    const routePoints = getCurvedRoutePoints(validLocations[index], validLocations[index + 1])
+    routeBounds.push(...routePoints)
+
+    L.polyline(routePoints, {
+      color: '#ffffff',
+      weight: 8,
+      opacity: 0.9,
+      lineCap: 'round',
+      lineJoin: 'round',
+      interactive: false,
+    }).addTo(markersLayer)
+
+    L.polyline(routePoints, {
+      color: '#2563eb',
+      weight: 4,
+      opacity: 0.85,
+      dashArray: '10 12',
+      lineCap: 'round',
+      lineJoin: 'round',
+      interactive: false,
+    }).addTo(markersLayer)
+  }
+
+  return routeBounds
+}
+
 const setDefaultWorldView = () => {
   if (!map) {
     return
@@ -37,30 +95,30 @@ const drawMarkers = () => {
 
   markersLayer.clearLayers()
 
-  if (!props.locations.length) {
+  const validLocations = getValidLocations()
+
+  if (!validLocations.length) {
     setDefaultWorldView()
     return
   }
 
-  props.locations.forEach((location) => {
-    const hasCoordinates = Number.isFinite(location.lat) && Number.isFinite(location.lng)
+  const routeBounds = drawRoute(validLocations)
 
-    if (!hasCoordinates) {
-      return
-    }
-
+  validLocations.forEach((location) => {
     L.marker([location.lat, location.lng], { icon: tripMarkerIcon })
       .addTo(markersLayer)
       .bindPopup(location.name || 'Selected location')
   })
 
-  const firstLocation = props.locations[0]
-
-  if (Number.isFinite(firstLocation?.lat) && Number.isFinite(firstLocation?.lng)) {
-    map.setView([firstLocation.lat, firstLocation.lng], 8)
-  } else {
-    setDefaultWorldView()
+  if (validLocations.length > 1) {
+    map.fitBounds(routeBounds, {
+      padding: [45, 45],
+      maxZoom: 8,
+    })
+    return
   }
+
+  map.setView([validLocations[0].lat, validLocations[0].lng], 8)
 }
 
 onMounted(() => {
