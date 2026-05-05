@@ -39,6 +39,11 @@ const generateInviteCode = (length = 10) => {
   return code
 }
 
+const buildMemberProfileSnapshot = (user) => ({
+  displayName: user?.displayName || null,
+  email: user?.email || null,
+})
+
 const addFamilyIdToUser = async (user, familyId) => {
   const userRef = doc(db, 'users', user.uid)
 
@@ -86,6 +91,7 @@ export const createFamily = async (name, user) => {
       doc(db, 'families', familyDoc.id, 'members', authUser.uid),
       {
         role: 'admin',
+        ...buildMemberProfileSnapshot(authUser),
         joinedAt: serverTimestamp(),
       },
       { merge: true },
@@ -132,6 +138,7 @@ export const joinFamily = async (inviteCode, user) => {
       doc(db, 'families', familyId, 'members', authUser.uid),
       {
         role: 'member',
+        ...buildMemberProfileSnapshot(authUser),
         joinedAt: serverTimestamp(),
       },
       { merge: true },
