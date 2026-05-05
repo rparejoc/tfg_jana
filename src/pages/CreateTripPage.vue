@@ -72,34 +72,8 @@ const selectedParticipants = computed(() =>
   ),
 )
 
-const isUsefulParticipantName = (name) => typeof name === 'string' && name.trim().length > 2
-
-const getParticipantName = (participant) => {
-  const displayName = participant?.displayName?.trim()
-  const email = participant?.email?.trim()
-
-  if (isUsefulParticipantName(displayName)) {
-    return displayName
-  }
-
-  return email || displayName || participant?.label || participant?.id || 'Unknown user'
-}
-
-const getParticipantDetail = (participant) => {
-  const displayName = participant?.displayName?.trim()
-  const email = participant?.email?.trim()
-  const primaryName = getParticipantName(participant)
-
-  if (email && email !== primaryName) {
-    return email
-  }
-
-  if (displayName && displayName !== primaryName) {
-    return displayName
-  }
-
-  return participant?.id ? `ID: ${participant.id}` : 'Sin email disponible'
-}
+const getParticipantName = (participant) =>
+  participant?.displayName || participant?.email || participant?.label || participant?.id || 'Unknown user'
 
 const normalizeSelectedParticipants = () => {
   if (!user.value?.uid) {
@@ -133,10 +107,8 @@ const loadFamilyParticipants = async (familyId) => {
   const membersWithProfiles = await Promise.all(
     members.map(async (member) => {
       const { profile } = await userService.getUserProfile(member.id)
-      const isCurrentUser = member.id === user.value?.uid
-      const displayName =
-        profile?.displayName || (isCurrentUser ? user.value?.displayName : null) || member?.displayName || null
-      const email = profile?.email || (isCurrentUser ? user.value?.email : null) || member?.email || null
+      const displayName = profile?.displayName || null
+      const email = profile?.email || null
 
       return {
         ...member,
@@ -526,35 +498,27 @@ watch(
               <p v-if="participantsLoading" class="mt-4 text-sm text-slate-500">Cargando participantes...</p>
               <p v-if="participantsError" class="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">{{ participantsError }}</p>
 
-              <div v-if="participantOptions.length" class="mt-5 space-y-3">
-                <label
+              <div v-if="participantOptions.length" class="mt-5 grid gap-3 sm:grid-cols-2">
+                <button
                   v-for="participant in participantOptions"
                   :key="participant.id"
-                  class="flex cursor-pointer items-start gap-4 rounded-2xl border p-4 transition hover:-translate-y-0.5 hover:shadow-md sm:p-5"
-                  :class="participant.selected ? 'border-brand-600 bg-brand-50 shadow-brand-100 ring-2 ring-brand-100' : 'border-slate-200 bg-white'"
+                  type="button"
+                  :disabled="loading || participant.id === user?.uid"
+                  class="flex items-center gap-3 rounded-2xl border p-4 text-left transition hover:-translate-y-0.5 hover:shadow-md disabled:cursor-not-allowed"
+                  :class="participant.selected ? 'border-brand-600 bg-brand-50 shadow-brand-100' : 'border-slate-200 bg-white'"
+                  @click="toggleParticipant(participant.id)"
                 >
-                  <input
-                    class="mt-4 h-5 w-5 shrink-0 rounded border-slate-300 text-brand-600 focus:ring-brand-600 disabled:cursor-not-allowed"
-                    type="checkbox"
-                    :checked="participant.selected"
-                    :disabled="loading || participant.id === user?.uid"
-                    @change="toggleParticipant(participant.id)"
-                  />
-                  <span class="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl text-base font-bold shadow-sm sm:h-14 sm:w-14" :class="participant.selected ? 'bg-brand-600 text-white' : 'bg-slate-100 text-slate-600'">
+                  <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-bold" :class="participant.selected ? 'bg-brand-600 text-white' : 'bg-slate-100 text-slate-500'">
                     {{ getParticipantName(participant).slice(0, 1).toUpperCase() }}
                   </span>
                   <span class="min-w-0 flex-1">
-                    <span class="block break-words text-lg font-extrabold leading-7 text-slate-950">{{ getParticipantName(participant) }}</span>
-                    <span class="mt-1 block break-all text-sm font-medium text-slate-600">{{ getParticipantDetail(participant) }}</span>
-                    <span class="mt-3 flex flex-wrap gap-2">
-                      <span class="inline-flex rounded-full bg-white px-2.5 py-1 text-xs font-semibold capitalize text-slate-700 ring-1 ring-slate-200">{{ participant.role || 'member' }}</span>
-                      <span v-if="participant.id === user?.uid" class="inline-flex rounded-full bg-brand-600 px-2.5 py-1 text-xs font-semibold text-white">Creador incluido</span>
-                      <span v-else class="inline-flex rounded-full px-2.5 py-1 text-xs font-semibold" :class="participant.selected ? 'bg-brand-600 text-white' : 'bg-slate-100 text-slate-600'">
-                        {{ participant.selected ? 'Incluido' : 'No incluido' }}
-                      </span>
-                    </span>
+                    <span class="block truncate text-sm font-semibold text-slate-900">{{ getParticipantName(participant) }}</span>
+                    <span class="text-xs capitalize text-slate-500">{{ participant.id === user?.uid ? 'Creador incluido' : participant.role || 'member' }}</span>
                   </span>
-                </label>
+                  <span class="rounded-full px-2 py-1 text-xs font-semibold" :class="participant.selected ? 'bg-brand-600 text-white' : 'bg-slate-100 text-slate-500'">
+                    {{ participant.selected ? 'Incluido' : 'Añadir' }}
+                  </span>
+                </button>
               </div>
 
               <p v-else-if="!participantsLoading" class="mt-4 rounded-2xl border border-dashed border-slate-300 p-4 text-sm text-slate-500">No hay miembros de familia disponibles todavía. El creador se añadirá automáticamente.</p>
