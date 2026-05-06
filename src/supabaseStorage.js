@@ -1,3 +1,5 @@
+import { createClient } from '@supabase/supabase-js'
+
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL?.replace(/\/$/, '') || ''
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || ''
 const photosBucket = import.meta.env.VITE_SUPABASE_PHOTOS_BUCKET || 'trip-photos'
@@ -33,88 +35,55 @@ const getStorageConfig = () => {
   }
 }
 
-const encodeStoragePath = (path = '') =>
-  path
-    .split('/')
-    .filter((segment) => segment !== '')
-    .map((segment) => encodeURIComponent(segment))
-    .join('/')
+let supabaseClient = null
 
-const buildStorageUrl = (path = '') => {
-  const { url, bucket } = getStorageConfig()
-  const encodedBucket = encodeURIComponent(bucket)
-  const normalizedPath = encodeStoragePath(path)
+const getSupabaseClient = () => {
+  const { url, anonKey } = getStorageConfig()
 
-  return `${url}/storage/v1/object/${encodedBucket}${normalizedPath ? `/${normalizedPath}` : ''}`
-}
-
-const buildPublicUrl = (path) => {
-  const { url, bucket } = getStorageConfig()
-  const encodedBucket = encodeURIComponent(bucket)
-  const normalizedPath = encodeStoragePath(path)
-
-  return `${url}/storage/v1/object/public/${encodedBucket}/${normalizedPath}`
-}
-
-const getStorageHeaders = (extraHeaders = {}) => {
-  const { anonKey } = getStorageConfig()
-
-  return {
-    apikey: anonKey,
-    Authorization: `Bearer ${anonKey}`,
-    Accept: 'application/json',
-    ...extraHeaders,
-  }
-}
-
-const parseStorageError = async (response) => {
-  const responseText = await response.text().catch(() => '')
-
-  if (!responseText) {
-    return new SupabaseStorageError(
-      `Supabase Storage request failed with status ${response.status}.`,
-      { status: response.status },
-    )
-  }
-
-  try {
-    const responseBody = JSON.parse(responseText)
-    const message =
-      responseBody?.message ||
-      responseBody?.error_description ||
-      responseBody?.error ||
-      responseText
-
-    return new SupabaseStorageError(message, {
-      status: response.status,
-      code: responseBody?.code || responseBody?.error || null,
-      details: responseBody?.details || responseBody?.hint || null,
-      responseBody,
-    })
-  } catch {
-    return new SupabaseStorageError(responseText, {
-      status: response.status,
-      responseBody: responseText,
+  if (!supabaseClient) {
+    supabaseClient = createClient(url, anonKey, {
+      auth: {
+        persistSession: false,
+        autoRefreshToken: false,
+        detectSessionInUrl: false,
+      },
     })
   }
+
+  return supabaseClient
+}
+
+const toStorageError = (error, fallbackMessage) => {
+  if (!error) {
+    return new SupabaseStorageError(fallbackMessage)
+  }
+
+  return new SupabaseStorageError(error.message || fallbackMessage, {
+    status: error.statusCode || error.status || null,
+    code: error.error || error.code || null,
+    details: error.details || error.hint || null,
+    responseBody: error,
+  })
+}
+
+const getStorageBucket = () => {
+  const { bucket } = getStorageConfig()
+
+  return getSupabaseClient().storage.from(bucket)
 }
 
 export const uploadObject = async (path, file, options = {}) => {
-  const response = await fetch(buildStorageUrl(path), {
-    method: 'POST',
-    headers: getStorageHeaders({
-      'Content-Type': options.contentType || file.type || 'application/octet-stream',
-      'cache-control': options.cacheControl || '3600',
-      'x-upsert': options.upsert ? 'true' : 'false',
-    }),
-    body: file,
+  const { data, error } = await getStorageBucket().upload(path, file, {
+    cacheControl: options.cacheControl || '3600',
+    contentType: options.contentType || file.type || 'application/octet-stream',
+    upsert: Boolean(options.upsert),
   })
 
-  if (!response.ok) {
-    throw await parseStorageError(response)
+  if (error) {
+    throw toStorageError(error, 'Unable to upload the photo to Supabase Storage.')
   }
 
-  return response.json().catch(() => null)
+  return data
 }
 
 export const removeObjects = async (paths) => {
@@ -124,21 +93,19 @@ export const removeObjects = async (paths) => {
     return null
   }
 
-  const response = await fetch(buildStorageUrl(), {
-    method: 'DELETE',
-    headers: getStorageHeaders({
-      'Content-Type': 'application/json',
-    }),
-    body: JSON.stringify({ prefixes: validPaths }),
-  })
+  const { data, error } = await getStorageBucket().remove(validPaths)
 
-  if (!response.ok) {
-    throw await parseStorageError(response)
+  if (error) {
+    throw toStorageError(error, 'Unable to delete photos from Supabase Storage.')
   }
 
-  return response.json().catch(() => null)
+  return data
 }
 
-export const getPublicObjectUrl = (path) => buildPublicUrl(path)
+export const getPublicObjectUrl = (path) => {
+  const { data } = getStorageBucket().getPublicUrl(path)
+
+  return data.publicUrl
+}
 
 export { photosBucket, SupabaseStorageError }
