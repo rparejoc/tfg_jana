@@ -11,7 +11,7 @@ import {
   where,
   writeBatch,
 } from 'firebase/firestore'
-import { deleteObject, listAll, ref as storageRef } from 'firebase/storage'
+import { deleteObject, ref as storageRef } from 'firebase/storage'
 import { db, storage } from '../firebase'
 
 const toTripServiceError = (error, fallbackMessage) => ({
@@ -116,7 +116,37 @@ export const updateTrip = async (tripId, updatedData) => {
   }
 }
 
-export const deleteTrip = async (tripId, familyId) => {
+const deletePhotoDocuments = async (photoDocs) => {
+  const batchSize = 450
+
+  for (let index = 0; index < photoDocs.length; index += batchSize) {
+    const batch = writeBatch(db)
+
+    photoDocs.slice(index, index + batchSize).forEach((photoDoc) => {
+      batch.delete(photoDoc.ref)
+    })
+
+    await batch.commit()
+  }
+}
+
+const deleteStoredPhotos = async (photoDocs) => {
+  const storagePaths = photoDocs
+    .map((photoDoc) => photoDoc.data()?.storagePath)
+    .filter((storagePath) => typeof storagePath === 'string' && storagePath.trim())
+
+  if (!storagePaths.length) {
+    return
+  }
+
+  await Promise.all(
+    storagePaths.map((storagePath) =>
+      deleteObject(storageRef(storage, storagePath)).catch(() => null),
+    ),
+  )
+}
+
+export const deleteTrip = async (tripId) => {
   if (!tripId) {
     return {
       success: false,
@@ -126,28 +156,17 @@ export const deleteTrip = async (tripId, familyId) => {
 
   try {
     const photosRef = collection(db, 'trips', tripId, 'photos')
-    const photosSnapshot = await getDocs(photosRef)
-
-    if (!photosSnapshot.empty) {
-      const batch = writeBatch(db)
-      photosSnapshot.docs.forEach((photoDoc) => {
-        batch.delete(photoDoc.ref)
-      })
-      await batch.commit()
-    }
-
-    if (familyId) {
-      const tripStorageFolder = storageRef(storage, `families/${familyId}/trips/${tripId}`)
-      const listedItems = await listAll(tripStorageFolder)
-
-      if (listedItems.items.length) {
-        await Promise.all(
-          listedItems.items.map((storageItem) => deleteObject(storageItem).catch(() => null)),
-        )
-      }
-    }
+    const photosSnapshot = await getDocs(photosRef).catch(() => null)
+    const photoDocs = photosSnapshot?.docs || []
 
     await deleteDoc(doc(db, 'trips', tripId))
+
+    if (photoDocs.length) {
+      await Promise.all([
+        deletePhotoDocuments(photoDocs).catch(() => null),
+        deleteStoredPhotos(photoDocs),
+      ])
+    }
 
     return { success: true, error: null }
   } catch (error) {
