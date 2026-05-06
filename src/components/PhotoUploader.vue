@@ -1,5 +1,8 @@
 <script setup>
 import { onBeforeUnmount, ref } from 'vue'
+import { usePreferences } from '../composables/usePreferences'
+
+const { t } = usePreferences()
 
 defineProps({
   disabled: {
@@ -64,7 +67,7 @@ onBeforeUnmount(() => {
 
 <template>
   <section>
-    <label for="trip-photos">Trip photos</label>
+    <label for="trip-photos">{{ t('photo.tripPhotos') }}</label>
     <input
       id="trip-photos"
       type="file"
@@ -79,7 +82,7 @@ onBeforeUnmount(() => {
         <img :src="preview.previewUrl" :alt="preview.name" width="120" />
         <p>{{ preview.name }}</p>
         <button type="button" :disabled="disabled" @click="removeFile(index)">
-          Remove
+          {{ t('photo.remove') }}
         </button>
       </li>
     </ul>

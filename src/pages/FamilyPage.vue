@@ -4,9 +4,11 @@ import { storeToRefs } from 'pinia'
 import familyService from '../services/familyService'
 import userService from '../services/userService'
 import { useAuthStore } from '../stores/authStore'
+import { usePreferences } from '../composables/usePreferences'
 
 const authStore = useAuthStore()
 const { user } = storeToRefs(authStore)
+const { t } = usePreferences()
 
 const loading = ref(false)
 const error = ref('')
@@ -175,23 +177,23 @@ watch(
     <header class="overflow-hidden rounded-3xl border border-brand-100 bg-gradient-to-br from-brand-50 via-white to-amber-50 shadow-sm">
       <div class="flex flex-col gap-5 p-6 sm:flex-row sm:items-center sm:justify-between">
         <div class="max-w-2xl">
-          <p class="text-sm font-semibold uppercase tracking-[0.2em] text-brand-600">Family hub</p>
-          <h1 class="mt-2 text-3xl font-bold tracking-tight text-slate-950">Organize your families</h1>
+          <p class="text-sm font-semibold uppercase tracking-[0.2em] text-brand-600">{{ t('family.hub') }}</p>
+          <h1 class="mt-2 text-3xl font-bold tracking-tight text-slate-950">{{ t('family.title') }}</h1>
           <p class="mt-2 text-sm leading-6 text-slate-600">
-            Create a group, join with a code, or switch your active family before planning the next trip.
+            {{ t('family.subtitle') }}
           </p>
         </div>
         <router-link
           to="/trips/create"
           class="inline-flex items-center justify-center rounded-xl bg-brand-600 px-5 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-brand-700 focus:outline-none focus:ring-4 focus:ring-brand-200"
         >
-          + Create Trip
+          + {{ t('dashboard.createTrip') }}
         </router-link>
       </div>
     </header>
 
     <div v-if="loading" class="rounded-2xl border border-slate-200 bg-white p-5 text-sm font-medium text-slate-600 shadow-sm">
-      Loading families...
+      {{ t('family.loading') }}
     </div>
     <div v-if="error" class="rounded-2xl border border-rose-200 bg-rose-50 p-5 text-sm font-semibold text-rose-700 shadow-sm">
       {{ error }}
@@ -201,20 +203,20 @@ watch(
       <div class="space-y-5">
         <article v-if="!hasFamilies" class="rounded-3xl border border-dashed border-brand-200 bg-white p-6 text-center shadow-sm">
           <div class="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-brand-100 text-2xl">👨‍👩‍👧‍👦</div>
-          <h2 class="mt-4 text-xl font-bold text-slate-950">You do not have an active family yet</h2>
+          <h2 class="mt-4 text-xl font-bold text-slate-950">{{ t('family.noActive') }}</h2>
           <p class="mx-auto mt-2 max-w-lg text-sm leading-6 text-slate-600">
-            Start by creating a new family or paste an invite code someone sent you to join an existing one.
+            {{ t('family.noActiveHelp') }}
           </p>
         </article>
 
         <article v-else class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
           <div class="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
             <div>
-              <p class="text-sm font-semibold uppercase tracking-[0.18em] text-slate-400">Your groups</p>
-              <h2 class="text-2xl font-bold text-slate-950">Available families</h2>
+              <p class="text-sm font-semibold uppercase tracking-[0.18em] text-slate-400">{{ t('family.yourFamilies') }}</p>
+              <h2 class="text-2xl font-bold text-slate-950">{{ t('family.yourFamilies') }}</h2>
             </div>
             <span class="w-fit rounded-full bg-brand-50 px-3 py-1 text-sm font-semibold text-brand-700">
-              {{ families.length }} {{ families.length === 1 ? 'family' : 'families' }}
+              {{ t(families.length === 1 ? 'family.familySingle' : 'family.familyCount', { count: families.length }) }}
             </span>
           </div>
 
@@ -231,18 +233,18 @@ watch(
                     class="inline-flex rounded-full px-2.5 py-1 text-xs font-bold uppercase tracking-wide"
                     :class="family.id === activeFamilyId ? 'bg-brand-600 text-white' : 'bg-slate-100 text-slate-500'"
                   >
-                    {{ family.id === activeFamilyId ? 'Active' : 'Available' }}
+                    {{ family.id === activeFamilyId ? t('family.active') : t('family.makeActive') }}
                   </span>
                   <h3 class="mt-3 break-all text-lg font-bold text-slate-950">{{ family.id }}</h3>
                 </div>
                 <div class="rounded-2xl bg-white px-3 py-2 text-center shadow-sm ring-1 ring-slate-100">
                   <p class="text-2xl font-bold text-slate-950">{{ family.members.length }}</p>
-                  <p class="text-xs font-semibold uppercase tracking-wide text-slate-400">members</p>
+                  <p class="text-xs font-semibold uppercase tracking-wide text-slate-400">{{ t('family.memberLabel') }}</p>
                 </div>
               </div>
 
               <p v-if="family.membersError" class="mt-3 rounded-xl bg-amber-50 px-3 py-2 text-sm font-medium text-amber-700">
-                Members could not be loaded.
+                {{ t('family.membersUnavailable') }}
               </p>
 
               <button
@@ -252,7 +254,7 @@ watch(
                 :disabled="family.id === activeFamilyId"
                 @click="handleSwitchActiveFamily(family.id)"
               >
-                {{ family.id === activeFamilyId ? 'Already the active family' : 'Switch to this family' }}
+                {{ family.id === activeFamilyId ? t('family.active') : t('family.makeActive') }}
               </button>
             </li>
           </ul>
@@ -264,18 +266,18 @@ watch(
           <div class="flex items-center gap-3">
             <div class="flex h-11 w-11 items-center justify-center rounded-2xl bg-emerald-100 text-xl">＋</div>
             <div>
-              <h2 class="text-lg font-bold text-slate-950">Create family</h2>
-              <p class="text-sm text-slate-500">A new group for your trips.</p>
+              <h2 class="text-lg font-bold text-slate-950">{{ t('family.createTitle') }}</h2>
+              <p class="text-sm text-slate-500">{{ t('family.createHelp') }}</p>
             </div>
           </div>
 
-          <label class="mt-5 block text-sm font-bold text-slate-700" for="family-name">Family name</label>
+          <label class="mt-5 block text-sm font-bold text-slate-700" for="family-name">{{ t('family.familyName') }}</label>
           <input
             id="family-name"
             v-model="createFamilyName"
             class="mt-2 w-full rounded-xl border border-slate-300 px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition placeholder:text-slate-400 focus:border-brand-500 focus:ring-4 focus:ring-brand-100 disabled:bg-slate-100"
             type="text"
-            placeholder="Garcia family"
+            :placeholder="t('family.familyNamePlaceholder')"
             required
             :disabled="createLoading || joinLoading || !user?.uid"
           />
@@ -284,7 +286,7 @@ watch(
             class="mt-4 inline-flex w-full items-center justify-center rounded-xl bg-brand-600 px-4 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-brand-700 focus:outline-none focus:ring-4 focus:ring-brand-200 disabled:cursor-not-allowed disabled:bg-slate-300"
             :disabled="createLoading || joinLoading || !user?.uid"
           >
-            {{ createLoading ? 'Creating...' : 'Create family' }}
+            {{ createLoading ? t('family.creating') : t('family.create') }}
           </button>
         </form>
 
@@ -292,18 +294,18 @@ watch(
           <div class="flex items-center gap-3">
             <div class="flex h-11 w-11 items-center justify-center rounded-2xl bg-amber-100 text-xl">⌁</div>
             <div>
-              <h2 class="text-lg font-bold text-slate-950">Join with a code</h2>
-              <p class="text-sm text-slate-500">Paste the invite code.</p>
+              <h2 class="text-lg font-bold text-slate-950">{{ t('family.joinTitle') }}</h2>
+              <p class="text-sm text-slate-500">{{ t('family.joinHelp') }}</p>
             </div>
           </div>
 
-          <label class="mt-5 block text-sm font-bold text-slate-700" for="invite-code">Invite code</label>
+          <label class="mt-5 block text-sm font-bold text-slate-700" for="invite-code">{{ t('family.inviteCode') }}</label>
           <input
             id="invite-code"
             v-model="inviteCode"
             class="mt-2 w-full rounded-xl border border-slate-300 px-4 py-3 text-sm font-mono uppercase tracking-wider text-slate-900 shadow-sm outline-none transition placeholder:tracking-normal placeholder:text-slate-400 focus:border-brand-500 focus:ring-4 focus:ring-brand-100 disabled:bg-slate-100"
             type="text"
-            placeholder="ABC123"
+            :placeholder="t('family.invitePlaceholder')"
             required
             :disabled="createLoading || joinLoading || !user?.uid"
           />
@@ -312,7 +314,7 @@ watch(
             class="mt-4 inline-flex w-full items-center justify-center rounded-xl border border-brand-200 bg-white px-4 py-3 text-sm font-bold text-brand-700 shadow-sm transition hover:border-brand-300 hover:bg-brand-50 focus:outline-none focus:ring-4 focus:ring-brand-100 disabled:cursor-not-allowed disabled:border-slate-200 disabled:bg-slate-100 disabled:text-slate-400"
             :disabled="createLoading || joinLoading || !user?.uid"
           >
-            {{ joinLoading ? 'Joining...' : 'Join family' }}
+            {{ joinLoading ? t('family.joining') : t('family.join') }}
           </button>
         </form>
       </aside>
