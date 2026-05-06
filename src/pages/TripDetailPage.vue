@@ -17,6 +17,7 @@ const error = ref('')
 const trip = ref(null)
 const photos = ref([])
 const isAdmin = ref(false)
+const deleting = ref(false)
 
 const fallbackHeroGradient = 'linear-gradient(135deg, #1d4ed8 0%, #2563eb 48%, #38bdf8 100%)'
 
@@ -214,7 +215,7 @@ const loadTrip = async () => {
 }
 
 const handleDeleteTrip = async () => {
-  if (!trip.value?.id || !canManageTrip.value) {
+  if (!trip.value?.id || !canManageTrip.value || deleting.value) {
     return
   }
 
@@ -224,17 +225,18 @@ const handleDeleteTrip = async () => {
     return
   }
 
-  const { success, error: deleteError } = await tripService.deleteTrip(
-    trip.value.id,
-    trip.value.familyId || profile.value?.activeFamilyId,
-  )
+  deleting.value = true
+  error.value = ''
+
+  const { success, error: deleteError } = await tripService.deleteTrip(trip.value.id)
 
   if (!success || deleteError) {
     error.value = deleteError?.message || 'Unable to delete this trip right now.'
+    deleting.value = false
     return
   }
 
-  await router.push('/dashboard')
+  await router.push({ name: 'dashboard' })
 }
 
 onMounted(() => {
@@ -259,13 +261,13 @@ onMounted(() => {
             </div>
 
             <div v-if="canManageTrip" class="flex shrink-0 gap-3">
-              <router-link :to="`/trip/${trip.id}/edit`" class="inline-flex items-center gap-2 rounded-xl bg-brand-600 px-4 py-3 text-sm font-bold text-white shadow-lg shadow-brand-200 transition hover:-translate-y-0.5 hover:bg-brand-700">
+              <router-link v-if="!deleting" :to="`/trip/${trip.id}/edit`" class="inline-flex items-center gap-2 rounded-xl bg-brand-600 px-4 py-3 text-sm font-bold text-white shadow-lg shadow-brand-200 transition hover:-translate-y-0.5 hover:bg-brand-700">
                 <span aria-hidden="true">✎</span>
                 Edit Trip
               </router-link>
-              <button type="button" @click="handleDeleteTrip" class="inline-flex items-center gap-2 rounded-xl border border-rose-200 bg-white px-4 py-3 text-sm font-bold text-rose-600 transition hover:-translate-y-0.5 hover:bg-rose-50">
+              <button type="button" :disabled="deleting" @click="handleDeleteTrip" class="inline-flex items-center gap-2 rounded-xl border border-rose-200 bg-white px-4 py-3 text-sm font-bold text-rose-600 transition hover:-translate-y-0.5 hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0">
                 <span aria-hidden="true">⌫</span>
-                Delete Trip
+                {{ deleting ? 'Deleting...' : 'Delete Trip' }}
               </button>
             </div>
           </div>
