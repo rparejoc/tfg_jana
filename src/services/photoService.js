@@ -1,14 +1,36 @@
 import { getPublicObjectUrl, uploadObject } from '../supabaseStorage'
 
+const imageTypeByExtension = {
+  jpg: 'image/jpeg',
+  jpeg: 'image/jpeg',
+  png: 'image/png',
+  webp: 'image/webp',
+  gif: 'image/gif',
+}
+
+const extensionByImageType = {
+  'image/jpeg': 'jpg',
+  'image/jpg': 'jpg',
+  'image/png': 'png',
+  'image/webp': 'webp',
+  'image/gif': 'gif',
+}
+
 const toPhotoServiceError = (error, fallbackMessage) => ({
   code: error?.code || 'storage/unknown',
+  status: error?.status || null,
   message: error?.message || fallbackMessage,
+  details: error?.details || null,
   originalError: error,
 })
 
 const getRequiredUploadData = (file, user, tripId, familyId) => {
   if (!(file instanceof File)) {
     throw new Error('A valid photo file is required.')
+  }
+
+  if (!file.size) {
+    throw new Error('The selected photo is empty.')
   }
 
   if (!user?.uid) {
@@ -24,14 +46,26 @@ const getRequiredUploadData = (file, user, tripId, familyId) => {
   }
 }
 
-const getSafeFileExtension = (file) => {
+const getExtensionFromName = (file) => {
   const extensionFromName = file.name?.split('.').pop()?.toLowerCase()
 
   if (extensionFromName && /^[a-z0-9]+$/.test(extensionFromName)) {
-    return extensionFromName
+    return extensionFromName === 'jpeg' ? 'jpg' : extensionFromName
   }
 
-  return file.type?.split('/').pop()?.toLowerCase() || 'jpg'
+  return null
+}
+
+const getSafeImageMetadata = (file) => {
+  const type = file.type?.toLowerCase()
+  const extensionFromName = getExtensionFromName(file)
+  const contentType =
+    extensionByImageType[type] && type !== 'image/jpg'
+      ? type
+      : imageTypeByExtension[extensionFromName] || 'image/jpeg'
+  const extension = extensionByImageType[contentType] || extensionFromName || 'jpg'
+
+  return { contentType, extension }
 }
 
 export const uploadPhoto = async (file, user, tripId, familyId) => {
@@ -39,11 +73,11 @@ export const uploadPhoto = async (file, user, tripId, familyId) => {
     getRequiredUploadData(file, user, tripId, familyId)
 
     const photoId = crypto.randomUUID()
-    const extension = getSafeFileExtension(file)
+    const { contentType, extension } = getSafeImageMetadata(file)
     const storagePath = `families/${familyId}/trips/${tripId}/${photoId}.${extension}`
 
     await uploadObject(storagePath, file, {
-      contentType: file.type || 'image/jpeg',
+      contentType,
     })
 
     return {

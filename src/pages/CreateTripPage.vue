@@ -357,7 +357,8 @@ const handleSubmit = async () => {
         )
 
         if (uploadError || !photoId || !url || !storagePath) {
-          uploadErrors.push(file.name)
+          const reason = uploadError?.message ? `: ${uploadError.message}` : ''
+          uploadErrors.push(`${file.name}${reason}`)
           continue
         }
 
@@ -377,8 +378,13 @@ const handleSubmit = async () => {
       })
 
       if (uploadErrors.length) {
-        error.value = `Trip created, but ${uploadErrors.length} photo(s) failed to upload.`
+        const failedUploads = uploadErrors.slice(0, 3).join('; ')
+        const remainingFailures =
+          uploadErrors.length > 3 ? ` (${uploadErrors.length - 3} more)` : ''
+
+        error.value = `Trip created, but ${uploadErrors.length} photo(s) failed to upload: ${failedUploads}${remainingFailures}.`
         loading.value = false
+        uploadLoading.value = false
         return
       }
     } catch (uploadProcessError) {
