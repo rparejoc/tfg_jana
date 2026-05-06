@@ -11,8 +11,8 @@ import {
   where,
   writeBatch,
 } from 'firebase/firestore'
-import { deleteObject, ref as storageRef } from 'firebase/storage'
-import { db, storage } from '../firebase'
+import { db } from '../firebase'
+import { removeObjects } from '../supabaseStorage'
 
 const toTripServiceError = (error, fallbackMessage) => ({
   code: error?.code || 'firestore/unknown',
@@ -139,11 +139,7 @@ const deleteStoredPhotos = async (photoDocs) => {
     return
   }
 
-  await Promise.all(
-    storagePaths.map((storagePath) =>
-      deleteObject(storageRef(storage, storagePath)).catch(() => null),
-    ),
-  )
+  await removeObjects(storagePaths).catch(() => null)
 }
 
 export const deleteTrip = async (tripId) => {
