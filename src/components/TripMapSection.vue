@@ -2,6 +2,7 @@
 import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
+import { usePreferences } from '../composables/usePreferences'
 
 const props = defineProps({
   locations: {
@@ -9,6 +10,8 @@ const props = defineProps({
     default: () => [],
   },
 })
+
+const { t } = usePreferences()
 
 let map = null
 let markersLayer = null
@@ -107,7 +110,7 @@ const drawMarkers = () => {
   validLocations.forEach((location) => {
     L.marker([location.lat, location.lng], { icon: tripMarkerIcon })
       .addTo(markersLayer)
-      .bindPopup(location.name || 'Selected location')
+      .bindPopup(location.name || t('map.selectedLocation'))
   })
 
   if (validLocations.length > 1) {

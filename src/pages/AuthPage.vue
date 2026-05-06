@@ -4,9 +4,11 @@ import { useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import authService from '../services/authService'
 import { useAuthStore } from '../stores/authStore'
+import { usePreferences } from '../composables/usePreferences'
 
 const authStore = useAuthStore()
 const { user, loading: authLoading } = storeToRefs(authStore)
+const { t } = usePreferences()
 
 const isLoginMode = ref(true)
 const email = ref('')
@@ -14,16 +16,16 @@ const password = ref('')
 const submitLoading = ref(false)
 const errorMessage = ref('')
 
-const modeTitle = computed(() => (isLoginMode.value ? 'Welcome back' : 'Create your account'))
+const modeTitle = computed(() => (isLoginMode.value ? t('auth.welcomeBack') : t('auth.createAccountTitle')))
 const modeSubtitle = computed(() => (isLoginMode.value
-  ? 'Sign in to keep planning and sharing your family trips.'
-  : 'Join FamTrip and start building family travel memories.'))
+  ? t('auth.loginSubtitle')
+  : t('auth.registerSubtitle')))
 const submitLabel = computed(() => (submitLoading.value
-  ? (isLoginMode.value ? 'Signing in...' : 'Creating account...')
-  : (isLoginMode.value ? 'Sign in' : 'Create account')))
+  ? (isLoginMode.value ? t('auth.signingIn') : t('auth.creatingAccount'))
+  : (isLoginMode.value ? t('auth.signIn') : t('auth.createAccount'))))
 const toggleLabel = computed(() => (isLoginMode.value
-  ? 'New to FamTrip? Create an account'
-  : 'Already have an account? Sign in'))
+  ? t('auth.newAccount')
+  : t('auth.existingAccount')))
 const passwordAutocomplete = computed(() => (isLoginMode.value ? 'current-password' : 'new-password'))
 
 const router = useRouter()
@@ -84,23 +86,23 @@ watch(
       <div class="hidden rounded-[2rem] bg-brand-700 p-8 text-white shadow-2xl shadow-brand-700/20 lg:block">
         <p class="text-sm font-semibold uppercase tracking-[0.28em] text-brand-100">FamTrip</p>
         <h1 class="mt-5 text-4xl font-black leading-tight tracking-tight">
-          Plan trips, collect memories, and keep the whole family in sync.
+          {{ t('auth.heroTitle') }}
         </h1>
         <p class="mt-5 max-w-md text-base leading-7 text-brand-50/90">
-          Access your shared dashboard to organize destinations, dates, photos, and family plans from one simple place.
+          {{ t('auth.heroSubtitle') }}
         </p>
         <div class="mt-8 grid grid-cols-3 gap-3 text-sm">
           <div class="rounded-2xl bg-white/12 p-4 backdrop-blur">
             <p class="text-2xl font-bold">01</p>
-            <p class="mt-1 text-brand-50/80">Create a trip</p>
+            <p class="mt-1 text-brand-50/80">{{ t('auth.stepCreate') }}</p>
           </div>
           <div class="rounded-2xl bg-white/12 p-4 backdrop-blur">
             <p class="text-2xl font-bold">02</p>
-            <p class="mt-1 text-brand-50/80">Invite family</p>
+            <p class="mt-1 text-brand-50/80">{{ t('auth.stepInvite') }}</p>
           </div>
           <div class="rounded-2xl bg-white/12 p-4 backdrop-blur">
             <p class="text-2xl font-bold">03</p>
-            <p class="mt-1 text-brand-50/80">Share photos</p>
+            <p class="mt-1 text-brand-50/80">{{ t('auth.stepShare') }}</p>
           </div>
         </div>
       </div>
@@ -110,14 +112,14 @@ watch(
           FT
         </div>
         <div class="mt-6 text-center">
-          <p class="text-sm font-semibold uppercase tracking-[0.22em] text-brand-600">FamTrip access</p>
+          <p class="text-sm font-semibold uppercase tracking-[0.22em] text-brand-600">{{ t('auth.access') }}</p>
           <h1 class="mt-3 text-3xl font-black tracking-tight text-slate-950">{{ modeTitle }}</h1>
           <p class="mt-3 text-sm leading-6 text-slate-600">{{ modeSubtitle }}</p>
         </div>
 
         <form class="mt-8 space-y-5" @submit.prevent="handleSubmit">
           <div class="space-y-2">
-            <label for="email" class="text-sm font-semibold text-slate-800">Email</label>
+            <label for="email" class="text-sm font-semibold text-slate-800">{{ t('auth.email') }}</label>
             <input
               id="email"
               v-model="email"
@@ -131,7 +133,7 @@ watch(
           </div>
 
           <div class="space-y-2">
-            <label for="password" class="text-sm font-semibold text-slate-800">Password</label>
+            <label for="password" class="text-sm font-semibold text-slate-800">{{ t('auth.password') }}</label>
             <input
               id="password"
               v-model="password"
@@ -146,7 +148,7 @@ watch(
           </div>
 
           <p v-if="authLoading && !submitLoading" class="rounded-xl bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-700">
-            Checking session...
+            {{ t('auth.checkingSession') }}
           </p>
           <p v-if="errorMessage" class="rounded-xl bg-rose-50 px-4 py-3 text-sm font-medium text-rose-700">
             {{ errorMessage }}
