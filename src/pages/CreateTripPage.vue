@@ -13,10 +13,12 @@ import { db } from '../firebase'
 import TripMapSection from '../components/TripMapSection.vue'
 import PhotoUploader from '../components/PhotoUploader.vue'
 import photoService from '../services/photoService'
+import { usePreferences } from '../composables/usePreferences'
 
 const router = useRouter()
 const authStore = useAuthStore()
 const { user, currentUserContext } = storeToRefs(authStore)
+const { t } = usePreferences()
 
 const form = reactive({
   title: '',
@@ -58,7 +60,7 @@ const participantOptions = computed(() => {
       role: 'member',
       displayName: user.value.displayName || null,
       email: user.value.email || null,
-      label: user.value.displayName || user.value.email || 'You',
+      label: user.value.displayName || user.value.email || t('auth.email'),
       selected: selectedParticipantIds.value.includes(user.value.uid),
     })
   }
@@ -73,7 +75,15 @@ const selectedParticipants = computed(() =>
 )
 
 const getParticipantName = (participant) =>
-  participant?.displayName || participant?.email || participant?.label || participant?.id || 'Unknown user'
+  participant?.displayName || participant?.email || participant?.label || participant?.id || t('nav.noEmail')
+
+const getParticipantRoleLabel = (participant) => {
+  if (participant?.id === user.value?.uid) {
+    return t('trip.create.creatorIncluded')
+  }
+
+  return t(`role.${participant?.role || 'member'}`)
+}
 
 const normalizeSelectedParticipants = () => {
   if (!user.value?.uid) {
@@ -158,7 +168,7 @@ const loadCreationContext = async () => {
 const handleLocationSearch = async () => {
   if (!locationQuery.value.trim()) {
     locationResults.value = []
-    locationError.value = 'Type a location to search.'
+    locationError.value = t('trip.common.typeLocation')
     return
   }
 
@@ -178,7 +188,7 @@ const handleLocationSearch = async () => {
   locationResults.value = searchedLocations
 
   if (!searchedLocations.length) {
-    locationError.value = 'No results found for this search.'
+    locationError.value = t('trip.common.noResults')
   }
 
   locationLoading.value = false
@@ -193,7 +203,7 @@ const addLocation = (location) => {
   )
 
   if (alreadyAdded) {
-    locationError.value = 'This location is already added.'
+    locationError.value = t('trip.common.duplicateLocation')
     return
   }
 
@@ -261,7 +271,7 @@ const buildLocationsWithWeather = async () => {
 
   if (hasFailures) {
     error.value =
-      'Trip will be created, but some weather data could not be loaded.'
+      t('trip.create.weatherPartialError')
   }
 
   return { enrichedLocations, weatherSnapshots }
@@ -284,7 +294,7 @@ const getCreationProfile = async () => {
 
 const handleSubmit = async () => {
   if (!user.value?.uid) {
-    error.value = 'You must be signed in to create a trip.'
+    error.value = t('trip.create.mustSignIn')
     return
   }
 
@@ -301,7 +311,7 @@ const handleSubmit = async () => {
   }
 
   if (!profile?.activeFamilyId) {
-    error.value = 'Select or create an active family before creating a trip.'
+    error.value = t('trip.create.noActiveFamily')
     loading.value = false
     return
   }
@@ -336,7 +346,7 @@ const handleSubmit = async () => {
   )
 
   if (createError || !tripId) {
-    error.value = createError?.message || 'Unable to create trip right now.'
+    error.value = createError?.message || t('trip.create.unableCreate')
     loading.value = false
     return
   }
@@ -380,15 +390,15 @@ const handleSubmit = async () => {
       if (uploadErrors.length) {
         const failedUploads = uploadErrors.slice(0, 3).join('; ')
         const remainingFailures =
-          uploadErrors.length > 3 ? ` (${uploadErrors.length - 3} more)` : ''
+          uploadErrors.length > 3 ? t('trip.create.moreFailures', { count: uploadErrors.length - 3 }) : ''
 
-        error.value = `Trip created, but ${uploadErrors.length} photo(s) failed to upload: ${failedUploads}${remainingFailures}.`
+        error.value = t('trip.create.uploadPartial', { count: uploadErrors.length, failures: failedUploads, remaining: remainingFailures })
         loading.value = false
         uploadLoading.value = false
         return
       }
     } catch (uploadProcessError) {
-      error.value = uploadProcessError?.message || 'Trip created, but photo processing failed.'
+      error.value = uploadProcessError?.message || t('trip.create.photoProcessingFailed')
       loading.value = false
       uploadLoading.value = false
       return
@@ -419,63 +429,63 @@ watch(
     <section class="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-xl shadow-slate-200/70">
       <div class="relative isolate bg-gradient-to-br from-brand-700 via-brand-600 to-sky-500 px-6 py-10 text-white sm:px-10">
         <div class="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.35),transparent_32rem)]"></div>
-        <p class="text-sm font-semibold uppercase tracking-[0.3em] text-white/75">New family trip</p>
+        <p class="text-sm font-semibold uppercase tracking-[0.3em] text-white/75">{{ t('trip.create.eyebrow') }}</p>
         <div class="mt-4 max-w-3xl">
-          <h1 class="text-3xl font-bold tracking-tight sm:text-5xl">Create a complete adventure</h1>
+          <h1 class="text-3xl font-bold tracking-tight sm:text-5xl">{{ t('trip.create.title') }}</h1>
           <p class="mt-3 text-base leading-7 text-white/85 sm:text-lg">
-            Add dates, participants, locations with their forecast, and memories so the whole family has the trip organized from the start.
+            {{ t('trip.create.subtitle') }}
           </p>
         </div>
         <div class="mt-8 grid gap-3 text-sm sm:grid-cols-3">
           <div class="rounded-2xl bg-white/15 p-4 backdrop-blur">
             <p class="font-semibold">{{ selectedParticipants.length }}</p>
-            <p class="text-white/75">participants</p>
+            <p class="text-white/75">{{ t('trip.common.participants') }}</p>
           </div>
           <div class="rounded-2xl bg-white/15 p-4 backdrop-blur">
             <p class="font-semibold">{{ locations.length }}</p>
-            <p class="text-white/75">locations</p>
+            <p class="text-white/75">{{ t('trip.common.locations') }}</p>
           </div>
           <div class="rounded-2xl bg-white/15 p-4 backdrop-blur">
             <p class="font-semibold">{{ photoFiles.length }}</p>
-            <p class="text-white/75">initial photos</p>
+            <p class="text-white/75">{{ t('trip.common.initialPhotos') }}</p>
           </div>
         </div>
       </div>
 
       <div class="bg-slate-50/80 px-6 py-8 sm:px-10">
-        <p v-if="setupLoading" class="mb-4 rounded-2xl border border-sky-200 bg-sky-50 p-4 text-sm text-sky-800">Loading family and participants...</p>
+        <p v-if="setupLoading" class="mb-4 rounded-2xl border border-sky-200 bg-sky-50 p-4 text-sm text-sky-800">{{ t('trip.create.loadingContext') }}</p>
         <p v-if="error" class="mb-4 rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">{{ error }}</p>
-        <p v-if="uploadLoading" class="mb-4 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">Uploading photos...</p>
+        <p v-if="uploadLoading" class="mb-4 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">{{ t('trip.create.uploadingPhotos') }}</p>
 
         <form class="grid gap-6 lg:grid-cols-[1.35fr_0.85fr]" @submit.prevent="handleSubmit">
           <div class="space-y-6">
             <section class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
               <div class="flex items-start justify-between gap-4">
                 <div>
-                  <p class="text-sm font-semibold uppercase tracking-[0.2em] text-brand-600">Step 1</p>
-                  <h2 class="mt-1 text-xl font-bold text-slate-900">Trip details</h2>
+                  <p class="text-sm font-semibold uppercase tracking-[0.2em] text-brand-600">{{ t('trip.common.step', { number: 1 }) }}</p>
+                  <h2 class="mt-1 text-xl font-bold text-slate-900">{{ t('trip.common.details') }}</h2>
                 </div>
-                <span class="rounded-full bg-brand-50 px-3 py-1 text-xs font-semibold text-brand-700">Required</span>
+                <span class="rounded-full bg-brand-50 px-3 py-1 text-xs font-semibold text-brand-700">{{ t('trip.common.required') }}</span>
               </div>
 
               <div class="mt-5 grid gap-5 sm:grid-cols-2">
                 <div class="space-y-1.5 sm:col-span-2">
-                  <label for="trip-title" class="text-sm font-medium text-slate-700">Title</label>
-                  <input id="trip-title" v-model="form.title" type="text" placeholder="Summer vacation" required :disabled="loading" class="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm outline-none ring-brand-100 transition focus:border-brand-600 focus:ring-4 disabled:bg-slate-100" />
+                  <label for="trip-title" class="text-sm font-medium text-slate-700">{{ t('trip.common.title') }}</label>
+                  <input id="trip-title" v-model="form.title" type="text" :placeholder="t('trip.common.titlePlaceholder')" required :disabled="loading" class="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm outline-none ring-brand-100 transition focus:border-brand-600 focus:ring-4 disabled:bg-slate-100" />
                 </div>
 
                 <div class="space-y-1.5 sm:col-span-2">
-                  <label for="trip-description" class="text-sm font-medium text-slate-700">Description</label>
-                  <textarea id="trip-description" v-model="form.description" placeholder="A simple family trip with stops, photos, and shared plans." :disabled="loading" class="min-h-28 w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm outline-none ring-brand-100 transition focus:border-brand-600 focus:ring-4 disabled:bg-slate-100"></textarea>
+                  <label for="trip-description" class="text-sm font-medium text-slate-700">{{ t('trip.common.description') }}</label>
+                  <textarea id="trip-description" v-model="form.description" :placeholder="t('trip.common.descriptionPlaceholder')" :disabled="loading" class="min-h-28 w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm outline-none ring-brand-100 transition focus:border-brand-600 focus:ring-4 disabled:bg-slate-100"></textarea>
                 </div>
 
                 <div class="space-y-1.5">
-                  <label for="trip-start-date" class="text-sm font-medium text-slate-700">Start date</label>
+                  <label for="trip-start-date" class="text-sm font-medium text-slate-700">{{ t('trip.common.startDate') }}</label>
                   <input id="trip-start-date" v-model="form.startDate" type="date" required :disabled="loading" class="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm outline-none ring-brand-100 transition focus:border-brand-600 focus:ring-4 disabled:bg-slate-100" />
                 </div>
 
                 <div class="space-y-1.5">
-                  <label for="trip-end-date" class="text-sm font-medium text-slate-700">End date</label>
+                  <label for="trip-end-date" class="text-sm font-medium text-slate-700">{{ t('trip.common.endDate') }}</label>
                   <input id="trip-end-date" v-model="form.endDate" type="date" required :disabled="loading" class="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm outline-none ring-brand-100 transition focus:border-brand-600 focus:ring-4 disabled:bg-slate-100" />
                 </div>
               </div>
@@ -484,14 +494,14 @@ watch(
             <section class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
               <div class="flex items-start justify-between gap-4">
                 <div>
-                  <p class="text-sm font-semibold uppercase tracking-[0.2em] text-brand-600">Step 2</p>
-                  <h2 class="mt-1 text-xl font-bold text-slate-900">Participants</h2>
-                  <p class="mt-1 text-sm text-slate-500">Choose which family members will be part of the trip.</p>
+                  <p class="text-sm font-semibold uppercase tracking-[0.2em] text-brand-600">{{ t('trip.common.step', { number: 2 }) }}</p>
+                  <h2 class="mt-1 text-xl font-bold text-slate-900">{{ t('trip.common.participants') }}</h2>
+                  <p class="mt-1 text-sm text-slate-500">{{ t('trip.create.participantsHelp') }}</p>
                 </div>
-                <span class="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">{{ selectedParticipants.length }} selected</span>
+                <span class="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">{{ t('trip.create.selectedCount', { count: selectedParticipants.length }) }}</span>
               </div>
 
-              <p v-if="participantsLoading" class="mt-4 text-sm text-slate-500">Loading participants...</p>
+              <p v-if="participantsLoading" class="mt-4 text-sm text-slate-500">{{ t('trip.create.loadingParticipants') }}</p>
               <p v-if="participantsError" class="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">{{ participantsError }}</p>
 
               <div v-if="participantOptions.length" class="mt-5 grid gap-3 2xl:grid-cols-2">
@@ -509,32 +519,32 @@ watch(
                   </span>
                   <span class="min-w-0">
                     <span class="block break-words text-sm font-semibold leading-5 text-slate-900">{{ getParticipantName(participant) }}</span>
-                    <span class="mt-1 block break-words text-xs capitalize leading-4 text-slate-500">{{ participant.id === user?.uid ? 'Creator included' : participant.role || 'member' }}</span>
+                    <span class="mt-1 block break-words text-xs capitalize leading-4 text-slate-500">{{ getParticipantRoleLabel(participant) }}</span>
                   </span>
                   <span class="col-start-2 w-fit rounded-full px-2 py-1 text-xs font-semibold" :class="participant.selected ? 'bg-brand-600 text-white' : 'bg-slate-100 text-slate-500'">
-                    {{ participant.selected ? 'Included' : 'Add' }}
+                    {{ participant.selected ? t('trip.create.included') : t('trip.create.add') }}
                   </span>
                 </button>
               </div>
 
-              <p v-else-if="!participantsLoading" class="mt-4 rounded-2xl border border-dashed border-slate-300 p-4 text-sm text-slate-500">No family members are available yet. The creator will be added automatically.</p>
+              <p v-else-if="!participantsLoading" class="mt-4 rounded-2xl border border-dashed border-slate-300 p-4 text-sm text-slate-500">{{ t('trip.create.noParticipants') }}</p>
             </section>
 
             <section class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
               <div class="flex items-start justify-between gap-4">
                 <div>
-                  <p class="text-sm font-semibold uppercase tracking-[0.2em] text-brand-600">Step 3</p>
-                  <h2 class="mt-1 text-xl font-bold text-slate-900">Locations and weather</h2>
-                  <p class="mt-1 text-sm text-slate-500">Search for destinations. When saved, each location will keep its associated weather forecast.</p>
+                  <p class="text-sm font-semibold uppercase tracking-[0.2em] text-brand-600">{{ t('trip.common.step', { number: 3 }) }}</p>
+                  <h2 class="mt-1 text-xl font-bold text-slate-900">{{ t('trip.common.locationsWeather') }}</h2>
+                  <p class="mt-1 text-sm text-slate-500">{{ t('trip.create.locationsHelp') }}</p>
                 </div>
-                <span class="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">{{ locations.length }} added</span>
+                <span class="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">{{ t('trip.common.addedCount', { count: locations.length }) }}</span>
               </div>
 
               <div class="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                <label for="trip-location-search" class="text-sm font-medium text-slate-700">Search location</label>
+                <label for="trip-location-search" class="text-sm font-medium text-slate-700">{{ t('trip.common.searchLocation') }}</label>
                 <div class="mt-2 flex flex-col gap-2 sm:flex-row">
-                  <input id="trip-location-search" v-model="locationQuery" type="text" placeholder="Search city or place" :disabled="loading || locationLoading" class="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm outline-none ring-brand-100 transition focus:border-brand-600 focus:ring-4 disabled:bg-slate-100" />
-                  <button type="button" @click="handleLocationSearch" :disabled="loading || locationLoading" class="rounded-2xl bg-slate-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-700 disabled:opacity-60">{{ locationLoading ? 'Searching...' : 'Search' }}</button>
+                  <input id="trip-location-search" v-model="locationQuery" type="text" :placeholder="t('trip.common.searchPlaceholder')" :disabled="loading || locationLoading" class="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm outline-none ring-brand-100 transition focus:border-brand-600 focus:ring-4 disabled:bg-slate-100" />
+                  <button type="button" @click="handleLocationSearch" :disabled="loading || locationLoading" class="rounded-2xl bg-slate-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-700 disabled:opacity-60">{{ locationLoading ? t('trip.common.searching') : t('trip.common.search') }}</button>
                 </div>
 
                 <p v-if="locationError" class="mt-3 text-sm text-rose-600">{{ locationError }}</p>
@@ -545,24 +555,24 @@ watch(
                       <span class="block truncate font-semibold text-slate-800">{{ result.name }}</span>
                       <span class="text-xs text-slate-500">{{ result.country }} · {{ result.lat }}, {{ result.lng }}</span>
                     </span>
-                    <button type="button" @click="addLocation(result)" :disabled="loading" class="rounded-xl border border-brand-200 bg-brand-50 px-3 py-2 text-xs font-semibold text-brand-700 transition hover:bg-brand-100">Select</button>
+                    <button type="button" @click="addLocation(result)" :disabled="loading" class="rounded-xl border border-brand-200 bg-brand-50 px-3 py-2 text-xs font-semibold text-brand-700 transition hover:bg-brand-100">{{ t('trip.common.select') }}</button>
                   </li>
                 </ul>
               </div>
 
               <div class="mt-5">
-                <h3 class="text-sm font-semibold text-slate-900">Added locations</h3>
+                <h3 class="text-sm font-semibold text-slate-900">{{ t('trip.common.addedLocations') }}</h3>
                 <ul v-if="locations.length" class="mt-3 grid gap-3">
                   <li v-for="(location, index) in locations" :key="`${location.name}-${location.lat}-${location.lng}-${index}`" class="flex items-start justify-between gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
                     <div>
                       <p class="font-semibold text-slate-900">{{ location.name }}<span v-if="location.country">, {{ location.country }}</span></p>
                       <p class="mt-1 text-xs text-slate-500">{{ location.lat }}, {{ location.lng }}</p>
-                      <p class="mt-2 text-xs font-medium text-brand-700">Weather will be saved for the trip start date.</p>
+                      <p class="mt-2 text-xs font-medium text-brand-700">{{ t('trip.create.weatherSaved') }}</p>
                     </div>
-                    <button type="button" :disabled="loading" class="rounded-xl border border-rose-200 px-3 py-2 text-xs font-semibold text-rose-600 transition hover:bg-rose-50" @click="removeLocation(index)">Remove</button>
+                    <button type="button" :disabled="loading" class="rounded-xl border border-rose-200 px-3 py-2 text-xs font-semibold text-rose-600 transition hover:bg-rose-50" @click="removeLocation(index)">{{ t('trip.common.remove') }}</button>
                   </li>
                 </ul>
-                <p v-else class="mt-3 rounded-2xl border border-dashed border-slate-300 p-4 text-sm text-slate-500">You have not added any locations yet.</p>
+                <p v-else class="mt-3 rounded-2xl border border-dashed border-slate-300 p-4 text-sm text-slate-500">{{ t('trip.common.noLocations') }}</p>
               </div>
 
               <TripMapSection v-if="locations.length" class="mt-5" :locations="locations" />
@@ -571,38 +581,38 @@ watch(
 
           <aside class="space-y-6">
             <section class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6 lg:sticky lg:top-6">
-              <h2 class="text-xl font-bold text-slate-900">Summary</h2>
+              <h2 class="text-xl font-bold text-slate-900">{{ t('trip.common.summary') }}</h2>
               <dl class="mt-5 space-y-4 text-sm">
                 <div class="flex items-center justify-between gap-4 rounded-2xl bg-slate-50 p-4">
-                  <dt class="text-slate-500">Dates</dt>
-                  <dd class="text-right font-semibold text-slate-900">{{ form.startDate || 'Start' }} → {{ form.endDate || 'End' }}</dd>
+                  <dt class="text-slate-500">{{ t('trip.common.dates') }}</dt>
+                  <dd class="text-right font-semibold text-slate-900">{{ form.startDate || t('trip.common.start') }} → {{ form.endDate || t('trip.common.end') }}</dd>
                 </div>
                 <div class="flex items-center justify-between gap-4 rounded-2xl bg-slate-50 p-4">
-                  <dt class="text-slate-500">Participants</dt>
+                  <dt class="text-slate-500">{{ t('trip.common.participants') }}</dt>
                   <dd class="font-semibold text-slate-900">{{ selectedParticipants.length }}</dd>
                 </div>
                 <div class="flex items-center justify-between gap-4 rounded-2xl bg-slate-50 p-4">
-                  <dt class="text-slate-500">Locations</dt>
+                  <dt class="text-slate-500">{{ t('trip.common.locations') }}</dt>
                   <dd class="font-semibold text-slate-900">{{ locations.length }}</dd>
                 </div>
               </dl>
 
               <div class="mt-6 rounded-2xl border border-dashed border-brand-200 bg-brand-50 p-4 text-sm text-brand-800">
-                <p class="font-semibold">Weather by location</p>
-                <p class="mt-1">When the trip is created, the forecast will be retrieved and saved with each destination.</p>
+                <p class="font-semibold">{{ t('trip.create.weatherBoxTitle') }}</p>
+                <p class="mt-1">{{ t('trip.create.weatherBoxHelp') }}</p>
               </div>
             </section>
 
             <section class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
-              <h2 class="text-xl font-bold text-slate-900">Initial photos</h2>
-              <p class="mt-1 text-sm text-slate-500">You can attach memories now or add them later.</p>
+              <h2 class="text-xl font-bold text-slate-900">{{ t('trip.create.initialPhotosTitle') }}</h2>
+              <p class="mt-1 text-sm text-slate-500">{{ t('trip.create.initialPhotosHelp') }}</p>
               <div class="mt-4">
                 <PhotoUploader :disabled="loading || uploadLoading" @update:selected-files="handlePhotosSelected" />
               </div>
             </section>
 
             <button type="submit" :disabled="loading || uploadLoading || setupLoading" class="w-full rounded-2xl bg-brand-600 px-5 py-4 text-sm font-bold text-white shadow-lg shadow-brand-200 transition hover:-translate-y-0.5 hover:bg-brand-700 disabled:translate-y-0 disabled:opacity-60">
-              {{ loading || uploadLoading ? 'Creating trip...' : 'Create Trip' }}
+              {{ loading || uploadLoading ? t('trip.create.creating') : t('trip.create.submit') }}
             </button>
           </aside>
         </form>

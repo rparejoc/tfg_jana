@@ -6,11 +6,13 @@ import familyService from '../services/familyService'
 import tripService from '../services/tripService'
 import { useAuthStore } from '../stores/authStore'
 import TripMapSection from '../components/TripMapSection.vue'
+import { usePreferences } from '../composables/usePreferences'
 
 const route = useRoute()
 const router = useRouter()
 const authStore = useAuthStore()
 const { user, profile } = storeToRefs(authStore)
+const { locale, t } = usePreferences()
 
 const loading = ref(true)
 const error = ref('')
@@ -32,19 +34,19 @@ const formatDisplayDate = (dateValue, options = { month: 'short', day: 'numeric'
     return dateValue
   }
 
-  return new Intl.DateTimeFormat('en', options).format(parsedDate)
+  return new Intl.DateTimeFormat(locale.value, options).format(parsedDate)
 }
 
 const tripDates = computed(() => {
   if (!trip.value) {
-    return 'Dates unavailable'
+    return t('trip.detail.datesUnavailable')
   }
 
   const startDate = formatDisplayDate(trip.value.startDate)
   const endDate = formatDisplayDate(trip.value.endDate)
 
   if (!startDate && !endDate) {
-    return 'Dates unavailable'
+    return t('trip.detail.datesUnavailable')
   }
 
   if (!startDate) {
@@ -122,8 +124,8 @@ const galleryPhotos = computed(() =>
       photo.caption ||
       photo.description ||
       (visitedLocations.value[index]?.name
-        ? `Memory from ${visitedLocations.value[index].name}`
-        : `Trip memory ${index + 1}`),
+        ? t('trip.detail.memoryFrom', { location: visitedLocations.value[index].name })
+        : t('trip.detail.tripMemory', { number: index + 1 })),
   })),
 )
 
@@ -137,16 +139,16 @@ const canManageTrip = computed(() => {
 
 const getLocationLabel = (location) => {
   if (!location?.name && !location?.country) {
-    return 'Unknown location'
+    return t('trip.detail.unknownLocation')
   }
 
   return [location.name, location.country].filter(Boolean).join(', ')
 }
 
-const getWeatherCondition = (weather) => weather?.condition || 'No forecast'
+const getWeatherCondition = (weather) => weather?.condition || t('trip.detail.noForecast')
 
 const getWeatherDate = (weather, fallbackStart = trip.value?.startDate) =>
-  formatDisplayDate(weather?.date || fallbackStart, { month: 'short', day: 'numeric' }) || 'Date pending'
+  formatDisplayDate(weather?.date || fallbackStart, { month: 'short', day: 'numeric' }) || t('trip.detail.datePending')
 
 const getWeatherTemp = (weather) => {
   if (typeof weather?.temperatureAvg !== 'number') {
@@ -198,7 +200,7 @@ const loadTrip = async () => {
   } = await tripService.getTripById(tripId)
 
   if (tripError || !fetchedTrip) {
-    error.value = tripError?.message || 'Unable to load this trip.'
+    error.value = tripError?.message || t('trip.detail.unableLoad')
     trip.value = null
     photos.value = []
     loading.value = false
@@ -219,7 +221,7 @@ const handleDeleteTrip = async () => {
     return
   }
 
-  const confirmed = window.confirm('Are you sure you want to delete this trip?')
+  const confirmed = window.confirm(t('trip.detail.deleteConfirm'))
 
   if (!confirmed) {
     return
@@ -231,7 +233,7 @@ const handleDeleteTrip = async () => {
   const { success, error: deleteError } = await tripService.deleteTrip(trip.value.id)
 
   if (!success || deleteError) {
-    error.value = deleteError?.message || 'Unable to delete this trip right now.'
+    error.value = deleteError?.message || t('trip.detail.unableDelete')
     deleting.value = false
     return
   }
@@ -246,7 +248,7 @@ onMounted(() => {
 
 <template>
   <main class="space-y-8">
-    <p v-if="loading" class="rounded-2xl border border-slate-200 bg-white p-5 text-sm text-slate-600 shadow-sm">Loading trip details...</p>
+    <p v-if="loading" class="rounded-2xl border border-slate-200 bg-white p-5 text-sm text-slate-600 shadow-sm">{{ t('trip.detail.loading') }}</p>
     <p v-else-if="error" class="rounded-2xl border border-rose-200 bg-rose-50 p-5 text-sm text-rose-700 shadow-sm">{{ error }}</p>
 
     <section v-else class="space-y-8">
@@ -255,19 +257,19 @@ onMounted(() => {
         <article class="relative mx-auto max-w-5xl rounded-3xl border border-white/70 bg-white p-6 shadow-xl shadow-slate-900/10 backdrop-blur sm:p-8">
           <div class="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
             <div class="max-w-3xl">
-              <p class="text-xs font-bold uppercase tracking-[0.28em] text-brand-600">Trip detail</p>
-              <h1 class="mt-3 text-4xl font-black tracking-tight text-slate-950 sm:text-5xl">{{ trip.title || 'Untitled trip' }}</h1>
-              <p class="mt-3 max-w-2xl text-base leading-7 text-slate-600">{{ trip.description || 'No description provided.' }}</p>
+              <p class="text-xs font-bold uppercase tracking-[0.28em] text-brand-600">{{ t('trip.detail.eyebrow') }}</p>
+              <h1 class="mt-3 text-4xl font-black tracking-tight text-slate-950 sm:text-5xl">{{ trip.title || t('dashboard.untitled') }}</h1>
+              <p class="mt-3 max-w-2xl text-base leading-7 text-slate-600">{{ trip.description || t('trip.detail.noDescription') }}</p>
             </div>
 
             <div v-if="canManageTrip" class="flex shrink-0 gap-3">
               <router-link v-if="!deleting" :to="`/trip/${trip.id}/edit`" class="inline-flex items-center gap-2 rounded-xl bg-brand-600 px-4 py-3 text-sm font-bold text-white shadow-lg shadow-brand-200 transition hover:-translate-y-0.5 hover:bg-brand-700">
                 <span aria-hidden="true">✎</span>
-                Edit Trip
+                {{ t('trip.detail.edit') }}
               </router-link>
               <button type="button" :disabled="deleting" @click="handleDeleteTrip" class="inline-flex items-center gap-2 rounded-xl border border-rose-200 bg-white px-4 py-3 text-sm font-bold text-rose-600 transition hover:-translate-y-0.5 hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0">
                 <span aria-hidden="true">⌫</span>
-                {{ deleting ? 'Deleting...' : 'Delete Trip' }}
+                {{ deleting ? t('trip.detail.deleting') : t('trip.detail.delete') }}
               </button>
             </div>
           </div>
@@ -287,7 +289,7 @@ onMounted(() => {
                 </div>
                 <span>{{ participantNames.join(', ') }}</span>
               </div>
-              <span v-else>No participants available.</span>
+              <span v-else>{{ t('trip.detail.noParticipants') }}</span>
             </div>
           </div>
         </article>
@@ -296,10 +298,10 @@ onMounted(() => {
       <section class="space-y-4">
         <div class="flex items-end justify-between gap-4">
           <div>
-            <p class="text-xs font-bold uppercase tracking-[0.28em] text-brand-600">Route</p>
-            <h2 class="mt-1 text-2xl font-black text-slate-950">Trip Route</h2>
+            <p class="text-xs font-bold uppercase tracking-[0.28em] text-brand-600">{{ t('trip.detail.route') }}</p>
+            <h2 class="mt-1 text-2xl font-black text-slate-950">{{ t('trip.detail.tripRoute') }}</h2>
           </div>
-          <span class="rounded-full border border-brand-100 bg-white px-4 py-2 text-sm font-bold text-brand-700 shadow-sm">{{ tripLocations.length }} locations</span>
+          <span class="rounded-full border border-brand-100 bg-white px-4 py-2 text-sm font-bold text-brand-700 shadow-sm">{{ t('dashboard.locations', { count: tripLocations.length }) }}</span>
         </div>
         <div class="overflow-hidden rounded-3xl border border-brand-100 bg-gradient-to-br from-brand-50 via-white to-emerald-50 p-3 shadow-sm">
           <TripMapSection :locations="tripLocations" />
@@ -308,8 +310,8 @@ onMounted(() => {
 
       <section class="space-y-4">
         <div>
-          <p class="text-xs font-bold uppercase tracking-[0.28em] text-brand-600">Stops</p>
-          <h2 class="mt-1 text-2xl font-black text-slate-950">Locations Visited</h2>
+          <p class="text-xs font-bold uppercase tracking-[0.28em] text-brand-600">{{ t('trip.detail.stops') }}</p>
+          <h2 class="mt-1 text-2xl font-black text-slate-950">{{ t('trip.detail.locationsVisited') }}</h2>
         </div>
 
         <div v-if="visitedLocations.length" class="space-y-4">
@@ -328,7 +330,7 @@ onMounted(() => {
                 {{ getWeatherDate(location.weather) }}
               </p>
               <p class="mt-3 text-sm leading-6 text-slate-600">
-                Stop {{ index + 1 }} of the route with saved coordinates for the family itinerary.
+                {{ t('trip.detail.stopDescription', { current: index + 1 }) }}
               </p>
               <div class="mt-4 inline-flex items-center gap-2 text-sm font-bold text-slate-700">
                 <span v-if="getWeatherIconTone(location.weather) === 'cloudy'" class="text-xl" aria-hidden="true">☁️</span>
@@ -340,17 +342,17 @@ onMounted(() => {
             </div>
           </article>
         </div>
-        <p v-else class="rounded-2xl border border-slate-200 bg-white p-5 text-sm text-slate-500 shadow-sm">No locations saved for this trip.</p>
+        <p v-else class="rounded-2xl border border-slate-200 bg-white p-5 text-sm text-slate-500 shadow-sm">{{ t('trip.detail.noLocations') }}</p>
       </section>
 
       <section class="space-y-4">
         <div>
-          <p class="text-xs font-bold uppercase tracking-[0.28em] text-brand-600">Forecast</p>
-          <h2 class="mt-1 text-2xl font-black text-slate-950">Weather Overview</h2>
+          <p class="text-xs font-bold uppercase tracking-[0.28em] text-brand-600">{{ t('trip.detail.forecast') }}</p>
+          <h2 class="mt-1 text-2xl font-black text-slate-950">{{ t('trip.detail.weatherOverview') }}</h2>
         </div>
         <ul v-if="weatherItems.length" class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           <li v-for="(weatherItem, index) in weatherItems" :key="`${weatherItem.locationName || 'location'}-${index}`" class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-            <p class="text-lg font-black text-slate-950">{{ weatherItem.locationName || visitedLocations[index]?.name || 'Unknown location' }}</p>
+            <p class="text-lg font-black text-slate-950">{{ weatherItem.locationName || visitedLocations[index]?.name || t('trip.detail.unknownLocation') }}</p>
             <p class="mt-1 text-sm font-semibold text-slate-500">{{ getWeatherDate(weatherItem) }}</p>
             <div class="mt-6 flex items-center gap-4">
               <div class="flex h-14 w-14 items-center justify-center rounded-full" :class="getWeatherIconTone(weatherItem) === 'cloudy' ? 'bg-slate-100' : getWeatherIconTone(weatherItem) === 'rainy' ? 'bg-sky-100' : 'bg-amber-100'">
@@ -365,13 +367,13 @@ onMounted(() => {
             </div>
           </li>
         </ul>
-        <p v-else class="rounded-2xl border border-slate-200 bg-white p-5 text-sm text-slate-500 shadow-sm">No weather data available.</p>
+        <p v-else class="rounded-2xl border border-slate-200 bg-white p-5 text-sm text-slate-500 shadow-sm">{{ t('trip.detail.noWeather') }}</p>
       </section>
 
       <section class="space-y-4 rounded-[2rem] bg-slate-100/70 p-5 sm:p-8">
         <div>
-          <p class="text-xs font-bold uppercase tracking-[0.28em] text-brand-600">Memories</p>
-          <h2 class="mt-1 text-2xl font-black text-slate-950">Photo Gallery</h2>
+          <p class="text-xs font-bold uppercase tracking-[0.28em] text-brand-600">{{ t('trip.detail.memories') }}</p>
+          <h2 class="mt-1 text-2xl font-black text-slate-950">{{ t('trip.detail.photoGallery') }}</h2>
         </div>
         <div v-if="galleryPhotos.length" class="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
           <figure v-for="photo in galleryPhotos" :key="photo.id" class="group">
@@ -381,7 +383,7 @@ onMounted(() => {
             <figcaption class="mt-3 text-sm font-bold text-slate-600">{{ photo.caption }}</figcaption>
           </figure>
         </div>
-        <p v-else class="rounded-2xl border border-slate-200 bg-white p-5 text-sm text-slate-500 shadow-sm">No photos uploaded for this trip.</p>
+        <p v-else class="rounded-2xl border border-slate-200 bg-white p-5 text-sm text-slate-500 shadow-sm">{{ t('trip.detail.noPhotos') }}</p>
       </section>
     </section>
   </main>
