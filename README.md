@@ -18,7 +18,7 @@ npm run preview
 
 ## Variables de entorno
 
-La aplicación mantiene Firebase para autenticación y Firestore, y usa Supabase Storage para las fotos de los viajes:
+La aplicación mantiene Firebase para autenticación y Firestore, y usa Supabase Storage mediante `@supabase/supabase-js` para las fotos de los viajes:
 
 ```bash
 VITE_SUPABASE_URL=https://<project-ref>.supabase.co
@@ -30,7 +30,7 @@ El bucket configurado en `VITE_SUPABASE_PHOTOS_BUCKET` debe permitir las operaci
 
 ### Políticas de Supabase Storage para subidas desde el cliente
 
-Las fotos se suben directamente desde el navegador con la clave anónima de Supabase. Si el bucket tiene RLS activo y no existe una política de inserción para el rol `anon`, Supabase responderá con `400 Bad Request` al `POST /storage/v1/object/...` aunque el bucket sea público. Para este proyecto, añade políticas equivalentes a las siguientes en Supabase SQL Editor si quieres permitir que el cliente suba y elimine fotos en `trip-photos`:
+Las fotos se suben directamente desde el navegador con la clave anónima de Supabase usando el cliente oficial `@supabase/supabase-js`. Si el bucket tiene RLS activo y no existe una política de inserción para el rol `anon`, Supabase responderá con `400 Bad Request` al `POST /storage/v1/object/...` aunque el bucket sea público. Para este proyecto, añade políticas equivalentes a las siguientes en Supabase SQL Editor si quieres permitir que el cliente suba y elimine fotos en `trip-photos`:
 
 ```sql
 create policy "Allow client photo uploads"
