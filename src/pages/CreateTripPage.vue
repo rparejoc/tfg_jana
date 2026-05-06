@@ -232,9 +232,6 @@ const handlePhotosSelected = (selectedFiles) => {
   photoFiles.value = selectedFiles
 }
 
-const getPhotoIdFromStoragePath = (storagePath) =>
-  storagePath?.split('/').pop()?.replace('.jpg', '') || null
-
 const buildLocationsWithWeather = async () => {
   const weatherDate = form.startDate || new Date().toISOString().slice(0, 10)
   const enrichedLocations = []
@@ -352,21 +349,14 @@ const handleSubmit = async () => {
       const uploadErrors = []
 
       for (const file of photoFiles.value) {
-        const { url, storagePath, error: uploadError } = await photoService.uploadPhoto(
+        const { photoId, url, storagePath, error: uploadError } = await photoService.uploadPhoto(
           file,
           user.value,
           tripId,
           profile.activeFamilyId,
         )
 
-        if (uploadError || !url || !storagePath) {
-          uploadErrors.push(file.name)
-          continue
-        }
-
-        const photoId = getPhotoIdFromStoragePath(storagePath)
-
-        if (!photoId) {
+        if (uploadError || !photoId || !url || !storagePath) {
           uploadErrors.push(file.name)
           continue
         }
